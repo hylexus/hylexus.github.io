@@ -1,0 +1,122 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description"><title>kafka-01-基础知识 | 宛丘</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=0.0.0"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/normalize/7.0.0/normalize.min.css"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/pure/1.0.0/pure-min.css"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/pure/1.0.0/grids-responsive-min.css"><link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css"><script type="text/javascript" src="//cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script><link rel="Shortcut Icon" type="image/x-icon" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">kafka-01-基础知识</h1><a id="logo" href="/.">宛丘</a><p class="description"></p></div><div id="nav-menu"><a href="/." class="current"><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div id="layout" class="pure-g"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">kafka-01-基础知识</h1><div class="post-meta">Apr 27, 2017<span> | </span><span class="category"><a href="/categories/kafka/">kafka</a></span></div><div class="post-content"><h1 id="1-简介"><a href="#1-简介" class="headerlink" title="1 简介"></a>1 简介</h1><p>MQ满天飞的时代，kafka也只是其中之一。</p>
+<p>Kafka，一个基于<code>分布式</code>的<code>高吞吐量</code>的<code>消息发布-订阅系统</code>。</p>
+<p>具有<code>快速</code>、<code>持久</code>、<code>可扩展</code>、<code>处理大量不同消费者</code>的特性。Kafka 不会关心消息的处理过程及消费者队列。</p>
+<ul>
+<li>磁盘线性读写，<code>O(1)</code>读写性能</li>
+<li>高吞吐量</li>
+<li>显式的<code>分布式</code>架构</li>
+</ul>
+<p>详细的介绍可以看这里：<a href="http://blog.cloudera.com/blog/2014/09/apache-kafka-for-beginners/" target="_blank" rel="external">http://blog.cloudera.com/blog/2014/09/apache-kafka-for-beginners/</a></p>
+<h1 id="2-名词解释"><a href="#2-名词解释" class="headerlink" title="2 名词解释"></a>2 名词解释</h1><ul>
+<li>broker</li>
+</ul>
+<p>kafka集群中的服务器(一个或多个)被称为<code>broker</code>。</p>
+<ul>
+<li>topic</li>
+</ul>
+<p>顾名思义,topic就是主题的意思。也就是对消息的一个分类。kafka中的每个消息都有一个分类/类别，这个类别就是topic。</p>
+<p>不同topic的消息在磁盘上是分开存储的，同时对消费者是透明的。也就是说当你消费消息的时候并不需要知道消息是怎么存储的，也不需要知道存储在哪里。</p>
+<ul>
+<li>partition</li>
+</ul>
+<p>可以认为是topic的物理分组,一个topic可以分为一个或多个partition。partition一两句话说不清，详情见后面的小节。</p>
+<ul>
+<li>producer</li>
+</ul>
+<p>这个好理解，就是消息的生产者。</p>
+<ul>
+<li>consumer</li>
+</ul>
+<p>和producer相对应，consumer就是消息的消费者。通常是各种高级语言写的客户端API，比如Java、Python甚至是JavaScript所写的客户端API。</p>
+<ul>
+<li>consumer group</li>
+</ul>
+<p>每个consumer都属于一个<code>消费者组</code>。不显示地指定消费者组的时候属于默认的消费者组。</p>
+<ul>
+<li>message</li>
+</ul>
+<p>消息是通信的基本单位，<code>producer</code>可以向<code>topic</code>发布<code>message</code>。新发布的消息就会广播给订阅了这个主题de consumer。message只能传输给某个group中的某一个consumer。</p>
+<h1 id="3-partition"><a href="#3-partition" class="headerlink" title="3 partition"></a>3 partition</h1><p>kafka作为一个MQ或者日志系统，他的最终数据存储还是离不开磁盘的。kafka对每个消息做了分类，即有了topic，每个topic当然也是持久化在磁盘上的。当消费完之后太过于陈旧的消息(message/topic)将被删除。</p>
+<p>鉴于此，将所有topic都存储在同一个目录里将导致磁盘文件太过于庞大，这样一来，管理不便，如果一个磁盘挂了，将导致所有数据丢失；而且磁盘的空间总是有限的。也就是说一个磁盘持久化所有数据在生成环境是不靠谱的。</p>
+<p>所以，kafka可以将不同的topic分布式地存储于不同的磁盘上，这就有了kafka所谓的partition的概念。</p>
+<p>partition是一个有序的、不可变的消息队列。每个消息都有一个连续的序列号即<code>offset</code>。每个partition又分为若干个<code>segment</code>。</p>
+<p>最简单的也就是kafka默认的partition分布存储策略就是hash了。简单理解就是所有可用的broker一次轮流一个一个地存储partition。</p>
+<p>这么一搞，最终结果就是：</p>
+<ul>
+<li>每台可用的broker上的数据逗比总数据要少</li>
+<li>但是每个消息数据都有冗余</li>
+<li>一般情况下，一台broker宕机并不影响整个系统(当然如果你只有一台broker那就另说了……)</li>
+</ul>
+<p>日志文件的存储位置(partition就在这里了)在server.properties中指定: <code>log.dirs=/Users/hylexus/data/kafka/kafka-logs</code>。</p>
+<h2 id="3-1-单机版partition的磁盘存储"><a href="#3-1-单机版partition的磁盘存储" class="headerlink" title="3.1 单机版partition的磁盘存储"></a>3.1 单机版partition的磁盘存储</h2><p>此处先从单机版kafka中partition存储方式说起。</p>
+<p>单机版并没有partition带来的好处。</p>
+<p>本人此处的设置是kafka数据存储在<code>log.dirs=/Users/hylexus/data/kafka/kafka-logs</code>。</p>
+<blockquote>
+<p>   创建一个测试用的topic名为topic01</p>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> bin/kafka-topics.sh --create \</div><div class="line">--zookeeper localhost:2181 \</div><div class="line">--replication-factor 1 \</div><div class="line">--partitions 4 \ # 分区数为4</div><div class="line">--topic topic01</div></pre></td></tr></table></figure>
+<blockquote>
+<p>   查看磁盘上partition的存储</p>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">hylexus@hylexusPC kafka-logs $ pwd</div><div class="line">/Users/hylexus/data/kafka/kafka-logs</div><div class="line">hylexus@hylexusPC kafka-logs $ ll</div><div class="line">drwxr-xr-x  5 hylexus  staff   170  5  1 15:46 topic01-0</div><div class="line">drwxr-xr-x  5 hylexus  staff   170  5  1 15:46 topic01-1</div><div class="line">drwxr-xr-x  5 hylexus  staff   170  5  1 15:46 topic01-2</div><div class="line">drwxr-xr-x  5 hylexus  staff   170  5  1 15:46 topic01-3</div><div class="line">hylexus@hylexusPC kafka-logs $</div></pre></td></tr></table></figure>
+<p>单机版由于只有一个目录,partition分布较为简单。</p>
+<h2 id="3-2-多broker下partition的磁盘存储"><a href="#3-2-多broker下partition的磁盘存储" class="headerlink" title="3.2 多broker下partition的磁盘存储"></a>3.2 多broker下partition的磁盘存储</h2><p>此处的多broker是如下形式：</p>
+<p><img src="http://img.blog.csdn.net/20170501162744336?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvaHlsZXh1cw==/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast" alt="多broker"></p>
+<p>单机上启动三个broker,注册到同一个zookeeper。</p>
+<blockquote>
+<p>   创建一个topic名为topic02,用以测试</p>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">bin/kafka-topics.sh --create \</div><div class="line">--zookeeper localhost:2181 \</div><div class="line">--replication-factor 2 \ # 2份拷贝</div><div class="line">--partitions 4 \ # 4个partition</div><div class="line">--topic topic02</div></pre></td></tr></table></figure>
+<blockquote>
+<p>   查看磁盘磁盘上partition存储</p>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line">hylexus@hylexusPC kafka-logs $ pwd</div><div class="line">/Users/hylexus/data/kafka/kafka-logs</div><div class="line">hylexus@hylexusPC kafka-logs $ ll</div><div class="line">drwxr-xr-x  5 hylexus  staff   170  5  1 16:29 topic02-0</div><div class="line">drwxr-xr-x  5 hylexus  staff   170  5  1 16:29 topic02-2</div><div class="line">drwxr-xr-x  5 hylexus  staff   170  5  1 16:29 topic02-3</div><div class="line"></div><div class="line">hylexus@hylexusPC kafka-logs-02 $ pwd</div><div class="line">/Users/hylexus/data/kafka/kafka-logs-02</div><div class="line">hylexus@hylexusPC kafka-logs-02 $ ll</div><div class="line">drwxr-xr-x  5 hylexus  staff  170  5  1 16:29 topic02-0</div><div class="line">drwxr-xr-x  5 hylexus  staff  170  5  1 16:29 topic02-1</div><div class="line">drwxr-xr-x  5 hylexus  staff  170  5  1 16:29 topic02-3</div><div class="line"></div><div class="line">hylexus@hylexusPC kafka-logs-03 $ pwd</div><div class="line">/Users/hylexus/data/kafka/kafka-logs-03</div><div class="line">hylexus@hylexusPC kafka-logs-03 $ ll</div><div class="line">drwxr-xr-x  5 hylexus  staff  170  5  1 16:29 topic02-1</div><div class="line">drwxr-xr-x  5 hylexus  staff  170  5  1 16:29 topic02-2</div></pre></td></tr></table></figure>
+<p>此时的partition磁盘分布如下:</p>
+<p><img src="http://img.blog.csdn.net/20170501165227917?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvaHlsZXh1cw==/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast" alt="partitions"></p>
+<p>记broker个数为n,则有：</p>
+<ul>
+<li>第i个partition分配到第<code>(i % n)</code>个broker</li>
+<li>第i个Partition的第j个拷贝分配到第<code>((i + j) % n)</code>个broker</li>
+</ul>
+<h2 id="3-3-partition磁盘存储总结"><a href="#3-3-partition磁盘存储总结" class="headerlink" title="3.3 partition磁盘存储总结"></a>3.3 partition磁盘存储总结</h2><ul>
+<li>每个partition为一个目录</li>
+<li>partiton命名规则为<code>topic名称</code>-<code>有序序号</code><ul>
+<li>第一个partiton有序序号从0开始</li>
+<li>序号最大值为partitions数量减1</li>
+</ul>
+</li>
+<li>如果你只是调用kafka提供的客户端程序的话，你没有必要清楚每个partition是怎么分布的，因为你只是调用客户端消费数据而已</li>
+</ul>
+<h2 id="3-4-partition中segment磁盘存储"><a href="#3-4-partition中segment磁盘存储" class="headerlink" title="3.4 partition中segment磁盘存储"></a>3.4 partition中segment磁盘存储</h2><p>接着上面说的，其实每个partition就相当于一个大型文件(整个消息记录)被分配到多个大小相等的文件中存储。大小相等但是消息个数不一定相等了，这样利于管理，可以快速的删除陈旧的文件，有效地提高了磁盘的利用率。</p>
+<p>此处所说的每个大小相等的文件就是segment(partition的再次细分)了。</p>
+<p>既然数据是存储在磁盘上的，即便比不上磁盘高效，但也要在一个MQ系统能接受的范围内。</p>
+<p>所以，索引就必不可少了，kafka的segment文件分为两个主要部分：index+log</p>
+<ul>
+<li>index主要是索引文件，log才是真正的消息数据。</li>
+<li>segment文件命名时：<ul>
+<li>第一个segment文件名称从零开始,前导零填充至19位</li>
+<li>其他每个segment文件名为上一个segment文件最后一个message的offset</li>
+</ul>
+</li>
+</ul>
+<p>此处就以单机版的kafka为例：</p>
+<p>为测试方便,此处我将<code>log.segment.bytes=1024</code>调整为1024,以便快速看到效果,生成一些message之后，topic01-0磁盘存储如下：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line">hylexus@hylexusPC topic01-0 $ pwd</div><div class="line">/Users/hylexus/data/kafka/kafka-logs/topic01-0</div><div class="line">hylexus@hylexusPC kafka-logs $ ll topic01-0</div><div class="line">-rw-r--r--  1 hylexus  staff         0  5  1 19:43 00000000000000000000.index</div><div class="line">-rw-r--r--  1 hylexus  staff       990  5  1 19:43 00000000000000000000.log</div><div class="line"></div><div class="line">-rw-r--r--  1 hylexus  staff         0  5  1 19:43 00000000000000000012.index</div><div class="line">-rw-r--r--  1 hylexus  staff       990  5  1 19:43 00000000000000000012.log</div><div class="line"></div><div class="line">-rw-r--r--  1 hylexus  staff         0  5  1 19:43 00000000000000000024.index</div><div class="line">-rw-r--r--  1 hylexus  staff       998  5  1 19:43 00000000000000000024.log</div><div class="line"></div><div class="line">-rw-r--r--  1 hylexus  staff         0  5  1 19:43 00000000000000000036.index</div><div class="line">-rw-r--r--  1 hylexus  staff       994  5  1 19:43 00000000000000000036.log</div><div class="line"></div><div class="line">-rw-r--r--  1 hylexus  staff         0  5  1 19:43 00000000000000000048.index</div><div class="line">-rw-r--r--  1 hylexus  staff      1004  5  1 19:43 00000000000000000048.log</div></pre></td></tr></table></figure>
+<h2 id="3-5-通过offset查找message"><a href="#3-5-通过offset查找message" class="headerlink" title="3.5 通过offset查找message"></a>3.5 通过offset查找message</h2><p>就拿上面的segment来说，第一个segment的命名为零(前导零).{index,log}。</p>
+<p>另外，上面我将每个segment的大小设置为1024即<code>log.segment.bytes=1024</code>。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">00000000000000000000 offset=0</div><div class="line">00000000000000000012 offset=12+1==13</div><div class="line">00000000000000000024 offset=24+1==25</div><div class="line">……</div></pre></td></tr></table></figure>
+<p>因此，通过offset查找具体消息步骤如下：</p>
+<ul>
+<li>二分查找定位到segment</li>
+<li>在某个具体的segment文件中顺序查找到具体message</li>
+<li>另外，为效率考虑，index所以文件是直接映射到内存的</li>
+</ul>
+<blockquote>
+<p>   例如:查找offset==23的message</p>
+</blockquote>
+<ul>
+<li>二分查找到具体segment为00000000000000000012</li>
+<li>在00000000000000000012内部顺序找到offset=23的message</li>
+</ul>
+<p>log4jdbc.md<br>slf4j 简介.md</p>
+</div><div class="tags"><a href="/tags/kafka/">kafka</a></div><div class="post-nav"><a href="/2017/08/06/spring-cloud-00-扫盲/" class="pre">spring-cloud-00-扫盲</a><a href="/2017/04/03/linux编译安装mysql/" class="next">linux编译安装mysql</a></div></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/99-problems-in-scala/">99-problems-in-scala</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-多线程/">Java-多线程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JavaSE/">JavaSE</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/LeetCode/">LeetCode</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/NIO/">NIO</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/app-server/">app-server</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/docker/">docker</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/http-server/">http-server</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kafka/">kafka</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/logging/">logging</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/maven/">maven</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/other/">other</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/scala/">scala</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/spark/">spark</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/spring-cloud/">spring-cloud</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/zookeeper/">zookeeper</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/安全/">安全</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/排序/">排序</a><span class="category-list-count">1</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-star-o"> 标签</i></div><div class="tagcloud"><a href="/tags/scala/" style="font-size: 15px;">scala</a> <a href="/tags/JVM/" style="font-size: 15px;">JVM</a> <a href="/tags/LeetCode/" style="font-size: 15px;">LeetCode</a> <a href="/tags/docker/" style="font-size: 15px;">docker</a> <a href="/tags/git/" style="font-size: 15px;">git</a> <a href="/tags/apache-httpd/" style="font-size: 15px;">apache/httpd</a> <a href="/tags/keytool/" style="font-size: 15px;">keytool</a> <a href="/tags/非对称加密/" style="font-size: 15px;">非对称加密</a> <a href="/tags/jt-808/" style="font-size: 15px;">jt-808</a> <a href="/tags/kafka/" style="font-size: 15px;">kafka</a> <a href="/tags/mysql/" style="font-size: 15px;">mysql</a> <a href="/tags/linux/" style="font-size: 15px;">linux</a> <a href="/tags/NIO/" style="font-size: 15px;">NIO</a> <a href="/tags/logging/" style="font-size: 15px;">logging</a> <a href="/tags/redis/" style="font-size: 15px;">redis</a> <a href="/tags/安全/" style="font-size: 15px;">安全</a> <a href="/tags/spark/" style="font-size: 15px;">spark</a> <a href="/tags/spring-cloud/" style="font-size: 15px;">spring-cloud</a> <a href="/tags/ssh/" style="font-size: 15px;">ssh</a> <a href="/tags/tomcat/" style="font-size: 15px;">tomcat</a> <a href="/tags/zookeeper/" style="font-size: 15px;">zookeeper</a> <a href="/tags/bit/" style="font-size: 15px;">bit</a> <a href="/tags/maven/" style="font-size: 15px;">maven</a> <a href="/tags/排序/" style="font-size: 15px;">排序</a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/java多线程-01-基本概念/">java多线程-01-基本概念</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/problem01-05/">problem01-05</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/git-01-简介、安装和配置/">git-01-简介、安装和配置</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/httpd系列-00-安装/">httpd系列-00-安装</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/排序算法-01-冒泡排序/">排序算法-01-冒泡排序排序算法-01-冒泡排序</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/java秘钥、证书管理工具-keytool/">java秘钥、证书管理工具-keytool</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/tomcat系列-01-名词解释/">tomcat系列-01-名词解释</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/shiro-常用filter/">shiro-常用filter</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/docker筑基篇-00-docker简介/">docker筑基篇-00-docker简介</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/常见加密类型及通信安全/">常见加密类型及通信安全</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-external-link"> 友情链接</i></div><ul></ul><a href="http://www.example1.com/" title="site-name1" target="_blank">site-name1</a><ul></ul><a href="http://www.example2.com/" title="site-name2" target="_blank">site-name2</a><ul></ul><a href="http://www.example3.com/" title="site-name3" target="_blank">site-name3</a></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2017 <a href="/." rel="nofollow">宛丘.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a id="rocket" href="#top" class="show"></a><script type="text/javascript" src="/js/totop.js?v=0.0.0" async></script><script type="text/javascript" src="//cdn.bootcss.com/fancybox/3.1.20/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=0.0.0" async></script><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/fancybox/3.1.20/jquery.fancybox.min.css"><script type="text/javascript" src="/js/codeblock-resizer.js?v=0.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=0.0.0"></script></div></body></html>

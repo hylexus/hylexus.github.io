@@ -1,0 +1,97 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description"><title>JVM系列-01-JVM内存模型 | 宛丘</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=0.0.0"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/normalize/7.0.0/normalize.min.css"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/pure/1.0.0/pure-min.css"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/pure/1.0.0/grids-responsive-min.css"><link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css"><script type="text/javascript" src="//cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script><link rel="Shortcut Icon" type="image/x-icon" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">JVM系列-01-JVM内存模型</h1><a id="logo" href="/.">宛丘</a><p class="description"></p></div><div id="nav-menu"><a href="/." class="current"><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div id="layout" class="pure-g"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">JVM系列-01-JVM内存模型</h1><div class="post-meta">Mar 15, 2017<span> | </span><span class="category"><a href="/categories/JVM/">JVM</a></span></div><div class="post-content"><p>本篇文章是本人阅读《深入理解JVM》和《java虚拟机规范》时的笔记。<br>JVM是HotSpot，jdk1.7。<br>大神绕路，不喜勿喷。</p>
+<h1 id="1-JVM内存模型"><a href="#1-JVM内存模型" class="headerlink" title="1 JVM内存模型"></a>1 JVM内存模型</h1><p><img src="http://img.blog.csdn.net/20161210212709845?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvaHlsZXh1cw==/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast" alt="JVM内存模型"></p>
+<h1 id="2-程序计数器-PC"><a href="#2-程序计数器-PC" class="headerlink" title="2 程序计数器(PC)"></a>2 程序计数器(PC)</h1><p>每个线程都会有自己私有的程序计数器(PC)。可以看作是当前线程所执行的字节码的行号指示器。<br>也可以理解为下一条将要执行的指令的地址或者行号。字节码解释器就是通过改变这个计数器的值来选取下一条需要执行的字节码指令,分支、 循环、 跳转、 异常处理、 线程上下文切换，线程恢复时，都要依赖PC.</p>
+<ul>
+<li>如果线程正在执行的是一个Java方法，PC值为正在执行的虚拟机字节码指令的地址</li>
+<li>如果线程正在执行的是Native方法，PC值为空(未定义)</li>
+</ul>
+<p><img src="http://img.blog.csdn.net/20161210002917116?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvaHlsZXh1cw==/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast" alt="JVM内存模型"></p>
+<p>说白了，PC就是一块内存区域。存放着下一条要执行的指令的地址。</p>
+<h1 id="3-虚拟机栈-VM-Stack"><a href="#3-虚拟机栈-VM-Stack" class="headerlink" title="3 虚拟机栈(VM Stack)"></a>3 虚拟机栈(VM Stack)</h1><h2 id="3-1-简介"><a href="#3-1-简介" class="headerlink" title="3.1 简介"></a>3.1 简介</h2><p>VM Stack也是线程私有的区域。他是java方法执行时的字典：它里面记录了局部变量表、 操作数栈、 动态链接、 方法出口等信息。</p>
+<p><strong>在《java虚拟机规范》一书中对这部分的描述如下：</strong></p>
+<blockquote>
+<p>栈帧（ Frame）是用来存储数据和部分过程结果的数据结构，同时也被用来处理动态链接 (Dynamic Linking)、 方法返回值和异常分派（ Dispatch Exception）。<br>栈帧随着方法调用而创建，随着方法结束而销毁——无论方法是正常完成还是异常完成（抛出了在方法内未被捕获的异常）都算作方法结束。<br>栈帧的存储空间分配在 Java 虚拟机栈（ §2.5.5）之中，每一个栈帧都有自己的局部变量表（ Local Variables， §2.6.1）、操作数栈（ OperandStack， §2.6.2）和指向当前方法所属的类的运行时常量池（ §2.5.5）的引用。</p>
+</blockquote>
+<p><img src="http://img.blog.csdn.net/20161210211653388?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvaHlsZXh1cw==/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast" alt="VM-Stack"></p>
+<p>说白了，VM Stack是一个<code>栈</code>,也是一块<code>内存区域</code>。<br>所以，他是有大小的。虽然有大小,但是一般而言，各种虚拟机的实现都支持动态扩展这部分内存。</p>
+<ul>
+<li>如果线程请求的栈深度太大,则抛出<code>StackOverflowError</code></li>
+<li>如果动态扩展时没有足够的大小,则抛出<code>OutOfMemoryError</code></li>
+</ul>
+<h2 id="3-2-StackOverflowError"><a href="#3-2-StackOverflowError" class="headerlink" title="3.2 StackOverflowError"></a>3.2 StackOverflowError</h2><p>以下代码肯定会导致StackOverflowError：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">m1</span><span class="params">()</span> </span>&#123;</div><div class="line">	m1();</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</div><div class="line">	m1();</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">Exception in thread &quot;main&quot; java.lang.StackOverflowError</div><div class="line">	at xxx.xxx.xxx.m1(JavaVMStackSOF.java:10)</div></pre></td></tr></table></figure>
+<h1 id="4-本地方法栈-Native-Method-Stack"><a href="#4-本地方法栈-Native-Method-Stack" class="headerlink" title="4 本地方法栈(Native Method Stack)"></a>4 本地方法栈(Native Method Stack)</h1><blockquote>
+<p>Java 虚拟机实现可能会使用到传统的栈（通常称之为“ C Stacks”）来支持 native 方法（ 指使用 Java 以外的其他语言编写的方法）的执行，这个栈就是本地方法栈（ Native MethodStack）。</p>
+</blockquote>
+<p>VM Stack是为执行java方法服务的，此处的Native Method Stack是为执行本地方法服务的。<br>此处的本地方法指定是和具体的底层操作系统层面相关的接口调用了(这部分太高高级了，不想深究……)。</p>
+<p>《java虚拟机规范》中没有对这部分做具体的规定。所以就由VM的实现者自由发挥了。<br>有的虚拟机(比如HotSpot)将VM Stack和Native Method Stack合二为一，所以VM的另一种内存区域图就如下面所示了：</p>
+<p><img src="http://img.blog.csdn.net/20161210190331115?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvaHlsZXh1cw==/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast" alt="JVM内存模型-虚拟机栈和本地方法栈合二为一"></p>
+<h1 id="5-Java堆-Heap"><a href="#5-Java堆-Heap" class="headerlink" title="5 Java堆(Heap)"></a>5 Java堆(Heap)</h1><h2 id="5-1-简介"><a href="#5-1-简介" class="headerlink" title="5.1 简介"></a>5.1 简介</h2><blockquote>
+<p>在 Java 虚拟机中，堆（ Heap）是可供各条线程共享的运行时内存区域，也是供所有类实例和数组对象分配内存的区域。</p>
+</blockquote>
+<p>以下是本人对《java虚拟机规范》一书中对Java堆的介绍的总结:</p>
+<ul>
+<li>在虚拟机启动的时候就被创建</li>
+<li>是所有线程共享的内存区域</li>
+<li>存储了被自动内存管理系统所管理的各种对象<ul>
+<li>这些受管理的对象无需，也无法显式地被销毁</li>
+<li>自动内存管理系统:Automatic StorageManagement System，也即是常说的”Garbage Collector(垃圾收集器)”</li>
+<li>并未指明用什么具体的技术去实现自动内存管理系统</li>
+</ul>
+</li>
+<li>Java 堆的容量可以是固定大小的，也可以随着程序执行的需求动态扩展，并在不需要过多空间时自动收缩</li>
+<li>Java 堆所使用的内存不需要保证是连续的</li>
+<li>如果实际所需的堆超过了自动内存管理系统能提供的最大容量，那 Java 虚拟机将会抛出一个<code>OutOfMemoryError</code> 异常</li>
+<li>实现者应当提供给程序员或者最终用户调节 Java 堆初始容量的手段<ul>
+<li>对于可以动态扩展和收缩 Java 堆来说，则应当提供调节其最大、最小容量的手段</li>
+</ul>
+</li>
+<li>所有的对象实例以及数组都要在堆上分配</li>
+</ul>
+<p><img src="http://img.blog.csdn.net/20161211023046712?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvaHlsZXh1cw==/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast" alt="JVM-Heap"></p>
+<p>至于堆内存的详细情况，将在后续的GC相关文章中介绍。</p>
+<h2 id="5-2-堆内存中的OutOfMemoryError"><a href="#5-2-堆内存中的OutOfMemoryError" class="headerlink" title="5.2 堆内存中的OutOfMemoryError"></a>5.2 堆内存中的OutOfMemoryError</h2><p>以下示例代码肯定导致堆内存溢出:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</div><div class="line">	ArrayList&lt;Integer&gt; list = Lists.newArrayList();</div><div class="line">	<span class="keyword">while</span> (<span class="keyword">true</span>) &#123;</div><div class="line">		list.add(<span class="number">1</span>);</div><div class="line">	&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>无限制的往list中添加元素,无论你的堆内存分配的多大，都会有溢出的时候。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">java.lang.OutOfMemoryError: Java heap space</div></pre></td></tr></table></figure>
+<h1 id="6-方法区-Method-Area"><a href="#6-方法区-Method-Area" class="headerlink" title="6 方法区(Method Area)"></a>6 方法区(Method Area)</h1><p>方法区是由所有线程共享的内存区域。<br>方法区存储的大致内容如下:</p>
+<ul>
+<li>每一个类的结构信息<ul>
+<li>运行时常量池（ Runtime Constant Pool）</li>
+<li>字段和方法数据</li>
+<li>构造函数和普通方法的字节码内容</li>
+</ul>
+</li>
+<li>类、实例、接口初始化时用到的特殊方法</li>
+</ul>
+<p>以下是本人对《java虚拟机规范》一书中对方法区的介绍的总结:</p>
+<ul>
+<li>在虚拟机启动的时候被创建</li>
+<li>虽然方法区是堆的逻辑组成部分，但是简单的虚拟机实现可以选择在这个区域不实现垃圾收集</li>
+<li>不限定实现方法区的内存位置和编译代码的管理策略</li>
+<li>容量可以是固定大小的，也可以随着程序执行的需求动态扩展，并在不需要过多空间时自动收缩。</li>
+<li>方法区在实际内存空间中可以是不连续的</li>
+<li>Java 虚拟机实现应当提供给程序员或者最终用户调节方法区初始容量的手段<ul>
+<li>对于可以动态扩展和收缩方法区来说，则应当提供调节其最大、最小容量的手段</li>
+</ul>
+</li>
+<li>如果方法区的内存空间不能满足内存分配请求，那 Java 虚拟机将抛出一个<code>OutOfMemoryError</code> 异常</li>
+</ul>
+<h2 id="6-1-运行时常量池-Runtime-Constant-Pool"><a href="#6-1-运行时常量池-Runtime-Constant-Pool" class="headerlink" title="6.1 运行时常量池(Runtime Constant Pool)"></a>6.1 运行时常量池(Runtime Constant Pool)</h2><p>《java虚拟机规范》中对常量池的介绍：</p>
+<blockquote>
+<p>运行时常量池（ Runtime Constant Pool）是每一个类或接口的常量池（ Constant_Pool，§4.4）的运行时表示形式，它包括了若干种不同的常量：从编译期可知的数值字面量到必须运行期解析后才能获得的方法或字段引用。<br>运行时常量池扮演了类似传统语言中符号表（ SymbolTable）的角色，不过它存储数据范围比通常意义上的符号表要更为广泛。</p>
+</blockquote>
+<p><img src="http://img.blog.csdn.net/20161210212709845?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvaHlsZXh1cw==/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast" alt="运行时常量池"></p>
+<p>每一个运行时常量池都分配在 Java 虚拟机的方法区之中，在类和接口被加载到虚拟机后，对应的运行时常量池就被创建出来。</p>
+<ul>
+<li>当创建类或接口的时候，如果构造运行时常量池所需要的内存空间超过了方法区所能提供的最大值，那 Java 虚拟机将会抛出一个 <code>OutOfMemoryError</code> 异常。</li>
+</ul>
+<h1 id="7-直接内存-Direct-Memory"><a href="#7-直接内存-Direct-Memory" class="headerlink" title="7 直接内存(Direct Memory)"></a>7 直接内存(Direct Memory)</h1><p>此处的直接内存并不是由JVM管理的内存。他是利用<code>本地方法库</code>直接在java堆之外申请的内存区域。<br>比如NIO中的<code>DirectByteBuffer</code>就是操作直接内存的。</p>
+<p>直接内存的好处就是避免了在java堆和native堆直接同步数据的步骤。但是他并不是由JVM来管理的。</p>
+<p>当然，这部分内存区域的操作也可能会抛出<code>OutOfMemoryError</code>。</p>
+<h1 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h1><ul>
+<li>《深入理解JVM》</li>
+<li>《Java虚拟机规范》-JDK1.7使用maven创建scala工程.md</li>
+</ul>
+</div><div class="tags"><a href="/tags/JVM/">JVM</a></div><div class="post-nav"><a href="/2017/03/15/ssh/" class="pre">ssh</a><a href="/2017/03/15/zookeeper-01-基本概念/" class="next">zookeeper-01-基本概念</a></div></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/99-problems-in-scala/">99-problems-in-scala</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-多线程/">Java-多线程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JavaSE/">JavaSE</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/LeetCode/">LeetCode</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/NIO/">NIO</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/app-server/">app-server</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/docker/">docker</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/http-server/">http-server</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kafka/">kafka</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/logging/">logging</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/maven/">maven</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/other/">other</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/scala/">scala</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/spark/">spark</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/spring-cloud/">spring-cloud</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/zookeeper/">zookeeper</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/安全/">安全</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/排序/">排序</a><span class="category-list-count">1</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-star-o"> 标签</i></div><div class="tagcloud"><a href="/tags/scala/" style="font-size: 15px;">scala</a> <a href="/tags/JVM/" style="font-size: 15px;">JVM</a> <a href="/tags/LeetCode/" style="font-size: 15px;">LeetCode</a> <a href="/tags/docker/" style="font-size: 15px;">docker</a> <a href="/tags/git/" style="font-size: 15px;">git</a> <a href="/tags/apache-httpd/" style="font-size: 15px;">apache/httpd</a> <a href="/tags/keytool/" style="font-size: 15px;">keytool</a> <a href="/tags/非对称加密/" style="font-size: 15px;">非对称加密</a> <a href="/tags/jt-808/" style="font-size: 15px;">jt-808</a> <a href="/tags/kafka/" style="font-size: 15px;">kafka</a> <a href="/tags/mysql/" style="font-size: 15px;">mysql</a> <a href="/tags/linux/" style="font-size: 15px;">linux</a> <a href="/tags/NIO/" style="font-size: 15px;">NIO</a> <a href="/tags/logging/" style="font-size: 15px;">logging</a> <a href="/tags/redis/" style="font-size: 15px;">redis</a> <a href="/tags/安全/" style="font-size: 15px;">安全</a> <a href="/tags/spark/" style="font-size: 15px;">spark</a> <a href="/tags/spring-cloud/" style="font-size: 15px;">spring-cloud</a> <a href="/tags/ssh/" style="font-size: 15px;">ssh</a> <a href="/tags/tomcat/" style="font-size: 15px;">tomcat</a> <a href="/tags/zookeeper/" style="font-size: 15px;">zookeeper</a> <a href="/tags/bit/" style="font-size: 15px;">bit</a> <a href="/tags/maven/" style="font-size: 15px;">maven</a> <a href="/tags/排序/" style="font-size: 15px;">排序</a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/java多线程-01-基本概念/">java多线程-01-基本概念</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/problem01-05/">problem01-05</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/git-01-简介、安装和配置/">git-01-简介、安装和配置</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/httpd系列-00-安装/">httpd系列-00-安装</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/排序算法-01-冒泡排序/">排序算法-01-冒泡排序排序算法-01-冒泡排序</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/java秘钥、证书管理工具-keytool/">java秘钥、证书管理工具-keytool</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/tomcat系列-01-名词解释/">tomcat系列-01-名词解释</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/shiro-常用filter/">shiro-常用filter</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/docker筑基篇-00-docker简介/">docker筑基篇-00-docker简介</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/常见加密类型及通信安全/">常见加密类型及通信安全</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-external-link"> 友情链接</i></div><ul></ul><a href="http://www.example1.com/" title="site-name1" target="_blank">site-name1</a><ul></ul><a href="http://www.example2.com/" title="site-name2" target="_blank">site-name2</a><ul></ul><a href="http://www.example3.com/" title="site-name3" target="_blank">site-name3</a></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2017 <a href="/." rel="nofollow">宛丘.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a id="rocket" href="#top" class="show"></a><script type="text/javascript" src="/js/totop.js?v=0.0.0" async></script><script type="text/javascript" src="//cdn.bootcss.com/fancybox/3.1.20/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=0.0.0" async></script><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/fancybox/3.1.20/jquery.fancybox.min.css"><script type="text/javascript" src="/js/codeblock-resizer.js?v=0.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=0.0.0"></script></div></body></html>

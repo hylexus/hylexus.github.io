@@ -1,0 +1,320 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description"><title>log4jdbc | 宛丘</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=0.0.0"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/normalize/7.0.0/normalize.min.css"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/pure/1.0.0/pure-min.css"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/pure/1.0.0/grids-responsive-min.css"><link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css"><script type="text/javascript" src="//cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script><link rel="Shortcut Icon" type="image/x-icon" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">log4jdbc</h1><a id="logo" href="/.">宛丘</a><p class="description"></p></div><div id="nav-menu"><a href="/." class="current"><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div id="layout" class="pure-g"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">log4jdbc</h1><div class="post-meta">Mar 15, 2017<span> | </span><span class="category"><a href="/categories/logging/">logging</a></span></div><div class="post-content"><h1 id="0-前言"><a href="#0-前言" class="headerlink" title="0 前言"></a>0 前言</h1><blockquote>
+<p>使用java进行数据库操作时最痛苦的莫过于拼接SQL语句。在实际运行时往往需要查看<font color="red">实际生成的SQL语句</font>和实际<font color="red">传入的参数</font>，或许还会有查看SQL<font color="red">执行时间</font>等的需求。<br>无论原生JDBC、dbutils、mybatis还是hibernate，使用log4j等日志框架可以看到生成的SQL，但是占位符和参数总是分开打印的。实在是不太友好。显示如下的效果:</p>
+</blockquote>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">select</span> * <span class="keyword">from</span> t_user <span class="keyword">where</span> age&gt;? <span class="keyword">and</span> (sex=? <span class="keyword">or</span> dept_id=?)</div></pre></td></tr></table></figure>
+<blockquote>
+<p><font color="red">log4jdbc</font>能很好的解决上述问题。使用log4jdbc之后的效果如下:</p>
+</blockquote>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">select</span> * <span class="keyword">from</span> t_user <span class="keyword">where</span> age&gt;<span class="number">1</span> <span class="keyword">and</span> (sex=<span class="number">0</span> <span class="keyword">or</span> dept_id=<span class="string">'007'</span>)</div></pre></td></tr></table></figure>
+<h1 id="1-log4jdbc简介"><a href="#1-log4jdbc简介" class="headerlink" title="1 log4jdbc简介"></a>1 log4jdbc简介</h1><blockquote>
+<p>没有什么比<a href="https://code.google.com/p/log4jdbc/" title="log4jdbc home page" target="_blank" rel="external">官网</a>对它的介绍更加贴切了:<br>log4jdbc is a Java JDBC driver that can log SQL and/or JDBC calls (and optionally SQL timing information) for other JDBC drivers using the Simple Logging Facade For Java (SLF4J) logging system.</p>
+<p>但是，众所周知googlecode在国内的访问问题……</p>
+<p><a href="https://code.google.com/p/log4jdbc/" title="log4jdbc home page" target="_blank" rel="external">官网</a>的<strong>News</strong>一栏有如下消息:</p>
+<p>2015-03-30: Due to Google Code shutting down soon, log4jdbc has moved to github at 2015-03-30: Due to Google Code shutting down soon, log4jdbc has moved to github at <a href="https://github.com/arthurblake/log4jdbc" target="_blank" rel="external">https://github.com/arthurblake/log4jdbc</a></p>
+</blockquote>
+<h1 id="2-特性"><a href="#2-特性" class="headerlink" title="2 特性"></a>2 特性</h1><ol>
+<li>完全支持JDBC3和JDBC4</li>
+<li>配置简单，一般情况下你只需要将你的DriverClass改为:<strong>net.sf.log4jdbc.DriverSpy</strong>，并在你的jdbcUrl之前拼接<strong>jdbc:log4</strong></li>
+<li>自动将占位符(?)替换为实际的参数</li>
+<li>能够及时方便地显示SQL的实际执行时间</li>
+<li>显示SQL Connection的数量的信息</li>
+<li>能在JDK1.4+和SLF4J1.X上和大多数常见的JDBC驱动协同工作</li>
+<li>open source</li>
+</ol>
+<h1 id="3-使用"><a href="#3-使用" class="headerlink" title="3 使用"></a>3 使用</h1><p><strong>以下多数信息来自于<a href="https://code.google.com/p/log4jdbc/" title="log4jdbc home page" target="_blank" rel="external">官网</a></strong></p>
+<h2 id="3-0-jar包的选择"><a href="#3-0-jar包的选择" class="headerlink" title="3.0 jar包的选择"></a>3.0 jar包的选择</h2><table>
+<thead>
+<tr>
+<th>JDK Version</th>
+<th>jar file</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>JDK 1.4 or 1.5</td>
+<td>JDBC 3 version of log4jdbc</td>
+</tr>
+<tr>
+<td>JDK 1.6 or 1.7</td>
+<td>JDBC 4 version of log4jdbc</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>不了解 <a href="http://blog.sina.com.cn/s/blog_4bb8c367010008l8.html" target="_blank" rel="external">JDBC3 JDBC4</a>？</p>
+</blockquote>
+<h2 id="3-1-日志系统的选择"><a href="#3-1-日志系统的选择" class="headerlink" title="3.1 日志系统的选择"></a>3.1 日志系统的选择</h2><blockquote>
+<p> log4jdbc 使用Simple Logging Facade for Java (<a href="http://www.slf4j.org/download.html" title="SLF4J下载" target="_blank" rel="external">SLF4j</a>) 作为日志系统，(SLF4J)是一个简单灵活的日志抽象层，可以方便的在以下日志系统之间切换:</p>
+<blockquote>
+<ul>
+<li>Log4j</li>
+<li>java.util logging in JDK 1.4</li>
+<li>logback</li>
+<li>Jakarta Commons Logging</li>
+</ul>
+</blockquote>
+</blockquote>
+<p>下载 <a href="http://www.slf4j.org/download.html" title="SLF4J下载" target="_blank" rel="external">SLF4j</a>，你将需要slf4j-api-1.5.0.jar和你实际所用的日志系统的jar包，或许还会有一个适配的中间插件jar包(取决于你使用的实际日志系统)。</p>
+<h2 id="3-2-更改DriverClass"><a href="#3-2-更改DriverClass" class="headerlink" title="3.2 更改DriverClass"></a>3.2 更改DriverClass</h2><p>log4jdbc “spy” driver 将会尝试着加载以下驱动:</p>
+<table>
+<thead>
+<tr>
+<th>Driver Class</th>
+<th>Database Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>oracle.jdbc.driver.OracleDriver</td>
+<td>Older Oracle Driver</td>
+</tr>
+<tr>
+<td>oracle.jdbc.OracleDriver</td>
+<td>Newer Oracle Driver</td>
+</tr>
+<tr>
+<td>com.sybase.jdbc2.jdbc.SybDriver</td>
+<td>Sybase</td>
+</tr>
+<tr>
+<td>net.sourceforge.jtds.jdbc.Driver</td>
+<td>jTDS SQL Server &amp; Sybase driver</td>
+</tr>
+<tr>
+<td>com.microsoft.jdbc.sqlserver.SQLServerDriver</td>
+<td>Microsoft SQL Server 2000 driver</td>
+</tr>
+<tr>
+<td>com.microsoft.sqlserver.jdbc.SQLServerDriver</td>
+<td>Microsoft SQL Server 2005 driver</td>
+</tr>
+<tr>
+<td>weblogic.jdbc.sqlserver.SQLServerDriver</td>
+<td>Weblogic SQL Server driver</td>
+</tr>
+<tr>
+<td>com.informix.jdbc.IfxDriver</td>
+<td>Informix</td>
+</tr>
+<tr>
+<td>org.apache.derby.jdbc.ClientDriver</td>
+<td>Apache Derby client/server driver, aka the Java DB</td>
+</tr>
+<tr>
+<td>org.apache.derby.jdbc.EmbeddedDriver</td>
+<td>Apache Derby embedded driver, aka the Java DB</td>
+</tr>
+<tr>
+<td>com.mysql.jdbc.Driver</td>
+<td>MySQL</td>
+</tr>
+<tr>
+<td>org.postgresql.Driver</td>
+<td>PostgresSQL</td>
+</tr>
+<tr>
+<td>org.hsqldb.jdbcDriver</td>
+<td>HSQLDB pure Java database</td>
+</tr>
+<tr>
+<td>org.h2.Driver</td>
+<td>H2 pure Java database</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong><font color="blue">注意:</font></strong> 如果你要使用一个不在上表中的Driver，请提供log4jdbc.drivers配置，多个之间用逗号分隔，不带空格。</p>
+</blockquote>
+<h2 id="3-3-prepend-jdbcUrl属性"><a href="#3-3-prepend-jdbcUrl属性" class="headerlink" title="3.3 prepend jdbcUrl属性"></a>3.3 prepend jdbcUrl属性</h2><blockquote>
+<p>例如:<br>你的url为: url= <font color="blue">jdbc:mysql://localhost:3306/mvn</font><br>应该改为: url= <font color="blue"><font color="red">jdbc:log4</font>jdbc:mysql://localhost:3306/mvn</font></p>
+</blockquote>
+<h2 id="3-4-建立你的日志系统"><a href="#3-4-建立你的日志系统" class="headerlink" title="3.4 建立你的日志系统"></a>3.4 建立你的日志系统</h2><blockquote>
+<p>log4jdbc使用5种logger:</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>logger</th>
+<th>描述</th>
+<th>since</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>jdbc.sqlonly</td>
+<td>仅仅记录 SQL 语句，会将占位符替换为实际的参数</td>
+<td>1.0</td>
+</tr>
+<tr>
+<td>jdbc.sqltiming</td>
+<td>包含 SQL 语句实际的执行时间</td>
+<td>1.0</td>
+</tr>
+<tr>
+<td>jdbc.audit</td>
+<td>除了 ResultSet 之外的所有JDBC调用信息，篇幅较长</td>
+<td>1.0</td>
+</tr>
+<tr>
+<td>jdbc.resultset</td>
+<td>包含 ResultSet 的信息，输出篇幅较长</td>
+<td>1.0</td>
+</tr>
+<tr>
+<td>jdbc.connection</td>
+<td>输出了 Connection 的 open、close 等信息</td>
+<td>1.2alpha1</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>此外还有个叫 log4jdbc.debug 的 logger，用于log4jdbc的内部调试，会输出 log4jdbc spy 加载驱动的时的信息，如driver found 或 not found 等信息。</p>
+</blockquote>
+<h2 id="3-5-修改debug选项–可选"><a href="#3-5-修改debug选项–可选" class="headerlink" title="3.5 修改debug选项–可选"></a>3.5 修改debug选项–可选</h2><blockquote>
+<p>可以在类路径下提供一个名为 <font color="blue">log4jdbc.properties </font>的配置文件，用以修改一些默认的debug属性。<br>其常用属性如下(来自于 <a href="https://code.google.com/p/log4jdbc/" title="log4jdbc home page" target="_blank" rel="external">官网</a> 文档):</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>property</th>
+<th>default</th>
+<th>description</th>
+<th>since </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>log4jdbc.drivers</td>
+<td></td>
+<td>log4jdbc 加载的一个或多个驱动的全类名。如果有多个，每个之间用逗号分隔(不带空格).对应常见的 JDBC drivers 此选项不是必须的。但是如果需要多个 driver ，需要配置该选项。</td>
+<td>1.0</td>
+</tr>
+<tr>
+<td>log4jdbc.auto.load.popular.drivers</td>
+<td>true</td>
+<td>自动加载常用的jdbc driver，如果设置为false，则必须提供 log4jdbc.drivers 属性。</td>
+<td>1.2beta2</td>
+</tr>
+<tr>
+<td>log4jdbc.debug.stack.prefix</td>
+<td></td>
+<td>The partial (or full) package prefix for the package name of your application. The call stack will be searched down to the first occurrence of a class that has the matching prefix. If this is not set, the actual class that called into log4jdbc is used in the debug output (in many cases this will be a connection pool class.) For example, setting a system property such as this: -Dlog4jdbc.debug.stack.prefix=com.mycompany.myapp Would cause the call stack to be searched for the first call that came from code in the com.mycompany.myapp package or below, thus if all of your sql generating code was in code located in the com.mycompany.myapp package or any subpackages, this would be printed in the debug information, rather than the package name for a connection pool, object relational system, etc.</td>
+<td>1.0</td>
+</tr>
+<tr>
+<td>log4jdbc.sqltiming.warn.threshold</td>
+<td></td>
+<td>毫秒值.执行时间超过该值的SQL语句将被记录为warn级别.</td>
+<td>1.1beta1</td>
+</tr>
+<tr>
+<td>log4jdbc.sqltiming.error.threshold</td>
+<td></td>
+<td>毫秒值.执行时间超过该值的SQL语句将被记录为error级别.</td>
+<td>1.1beta1</td>
+</tr>
+<tr>
+<td>log4jdbc.dump.booleanastruefalse</td>
+<td>false</td>
+<td>当该值为 false 时，boolean 值显示为 0 和 1 ，为 true 时 boolean 值显示为 true 和 false</td>
+<td>1.2alpha1</td>
+</tr>
+<tr>
+<td>log4jdbc.dump.sql.maxlinelength</td>
+<td>90</td>
+<td>SQL 分行的最大值</td>
+<td>1.2alpha1</td>
+</tr>
+<tr>
+<td>log4jdbc.dump.fulldebugstacktrace</td>
+<td>false</td>
+<td>设置为 true 将会输出大篇幅的 debug信息</td>
+<td>1.2alpha1</td>
+</tr>
+<tr>
+<td>log4jdbc.dump.sql.select</td>
+<td>true</td>
+<td>是否输出 select 语句</td>
+<td>1.2alpha1</td>
+</tr>
+<tr>
+<td>log4jdbc.dump.sql.insert</td>
+<td>true</td>
+<td>是否输出 insert 语句</td>
+<td>1.2alpha1</td>
+</tr>
+<tr>
+<td>log4jdbc.dump.sql.delete</td>
+<td>true</td>
+<td>是否输出 delete 语句</td>
+<td>1.2alpha1</td>
+</tr>
+<tr>
+<td>log4jdbc.dump.sql.update</td>
+<td>true</td>
+<td>是否输出 update 语句</td>
+<td>1.2alpha1</td>
+</tr>
+<tr>
+<td>log4jdbc.dump.sql.create</td>
+<td>true</td>
+<td>是否输出 create 语句</td>
+<td>1.2alpha1</td>
+</tr>
+<tr>
+<td>log4jdbc.dump.sql.addsemicolon</td>
+<td>false</td>
+<td>是否在 SQL 的行末添加一个分号</td>
+<td>1.2alpha1</td>
+</tr>
+<tr>
+<td>log4jdbc.statement.warn</td>
+<td>false</td>
+<td>Set this to true to display warnings (Why would you care?) in the log when Statements are used in the log. NOTE, this was always true in releases previous to 1.2alpha2. It is false by default starting with release 1.2 alpha 2.</td>
+<td>1.2alpha2</td>
+</tr>
+<tr>
+<td>log4jdbc.trim.sql</td>
+<td>true</td>
+<td>Set this to false to not trim the logged SQL. (Previous versions always trimmed the SQL.)</td>
+<td>1.2beta2</td>
+</tr>
+<tr>
+<td>log4jdbc.trim.sql.extrablanklines</td>
+<td>true</td>
+<td>Set this to false to not trim extra blank lines in the logged SQL (by default, when more than one blank line in a row occurs, the contiguous lines are collapsed to just one blank line.) (Previous versions didn’t trim extra blank lines at all.)</td>
+<td>1.2</td>
+</tr>
+<tr>
+<td>log4jdbc.suppress.generated.keys.exception</td>
+<td>false</td>
+<td>Set to true to ignore any exception produced by the method, Statement.getGeneratedKeys() (Useful for using log4jdbc with Coldfusion.)</td>
+<td>1.2beta2</td>
+</tr>
+</tbody>
+</table>
+<h1 id="4-实战"><a href="#4-实战" class="headerlink" title="4 实战"></a>4 实战</h1><h2 id="4-0-纯JDBC–log4j"><a href="#4-0-纯JDBC–log4j" class="headerlink" title="4.0 纯JDBC–log4j"></a>4.0 纯JDBC–log4j</h2><h3 id="4-0-0-jar包"><a href="#4-0-0-jar包" class="headerlink" title="4.0.0 jar包"></a>4.0.0 jar包</h3><p><strong>maven 依赖</strong></p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div></pre></td><td class="code"><pre><div class="line"><span class="tag">&lt;<span class="name">dependencies</span>&gt;</span></div><div class="line">		<span class="tag">&lt;<span class="name">dependency</span>&gt;</span></div><div class="line">			<span class="tag">&lt;<span class="name">groupId</span>&gt;</span>junit<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></div><div class="line">			<span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>junit<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></div><div class="line">			<span class="tag">&lt;<span class="name">version</span>&gt;</span>4.4<span class="tag">&lt;/<span class="name">version</span>&gt;</span></div><div class="line">			<span class="tag">&lt;<span class="name">scope</span>&gt;</span>test<span class="tag">&lt;/<span class="name">scope</span>&gt;</span></div><div class="line">		<span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></div><div class="line">		<span class="tag">&lt;<span class="name">dependency</span>&gt;</span></div><div class="line">			<span class="tag">&lt;<span class="name">groupId</span>&gt;</span>com.googlecode.log4jdbc<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></div><div class="line">			<span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>log4jdbc<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></div><div class="line">			<span class="tag">&lt;<span class="name">version</span>&gt;</span>1.2<span class="tag">&lt;/<span class="name">version</span>&gt;</span></div><div class="line">		<span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></div><div class="line">		<span class="tag">&lt;<span class="name">dependency</span>&gt;</span></div><div class="line">			<span class="tag">&lt;<span class="name">groupId</span>&gt;</span>mysql<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></div><div class="line">			<span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>mysql-connector-java<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></div><div class="line">			<span class="tag">&lt;<span class="name">version</span>&gt;</span>5.1.35<span class="tag">&lt;/<span class="name">version</span>&gt;</span></div><div class="line">		<span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></div><div class="line">		<span class="tag">&lt;<span class="name">dependency</span>&gt;</span></div><div class="line">			<span class="tag">&lt;<span class="name">groupId</span>&gt;</span>log4j<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></div><div class="line">			<span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>log4j<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></div><div class="line">			<span class="tag">&lt;<span class="name">version</span>&gt;</span>1.2.16<span class="tag">&lt;/<span class="name">version</span>&gt;</span></div><div class="line">		<span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></div><div class="line">		<span class="tag">&lt;<span class="name">dependency</span>&gt;</span></div><div class="line">			<span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.slf4j<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></div><div class="line">			<span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>slf4j-log4j12<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></div><div class="line">			<span class="tag">&lt;<span class="name">version</span>&gt;</span>1.6.0<span class="tag">&lt;/<span class="name">version</span>&gt;</span></div><div class="line">		<span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></div><div class="line">	<span class="tag">&lt;/<span class="name">dependencies</span>&gt;</span></div></pre></td></tr></table></figure>
+<h3 id="4-0-1-配置文件"><a href="#4-0-1-配置文件" class="headerlink" title="4.0.1 配置文件"></a>4.0.1 配置文件</h3><ol>
+<li><p>log4j.properties</p>
+ <figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line">log4j.logger.jdbc.sqlonly=OFF</div><div class="line">log4j.logger.jdbc.sqltiming=INFO</div><div class="line">log4j.logger.jdbc.audit=OFF</div><div class="line">log4j.logger.jdbc.resultset=OFF</div><div class="line">log4j.logger.jdbc.connection=OFF</div><div class="line"></div><div class="line">log4j.logger.jdbc.sqlonly=console</div><div class="line">log4j.appender.console=org.apache.log4j.ConsoleAppender</div><div class="line">log4j.appender.console.layout=org.apache.log4j.PatternLayout</div><div class="line">log4j.appender.console.layout.ConversionPattern=%d&#123;yyyy-MM-dd HH:mm:ss.SSS&#125; %m%n%n</div><div class="line">#log4j.logger.jdbc.sqltiming=INFO,console </div><div class="line">#log4j.logger.jdbc.connection=INFO,console</div><div class="line"></div><div class="line">log4j.rootLogger=DEBUG, console</div></pre></td></tr></table></figure>
+</li>
+<li><p>dbconfig.properties</p>
+ <figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">url:jdbc:log4jdbc:mysql:<span class="comment">//localhost:3306/mvn</span></div><div class="line">driverClassName:net.sf.log4jdbc.DriverSpy</div><div class="line">username:root</div><div class="line">password:root</div></pre></td></tr></table></figure>
+</li>
+<li><p>log4jdbc.properties</p>
+ <figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line">log4jdbc.debug.stack.prefix=software_test.log4jdbc</div><div class="line">log4jdbc.drivers=com.mysql.jdbc.Driver</div><div class="line">log4jdbc.auto.load.popular.drivers=<span class="keyword">true</span></div><div class="line"></div><div class="line">log4jdbc.statement.warn=<span class="keyword">true</span></div><div class="line">log4jdbc.sqltiming.warn.threshold=<span class="number">1000</span></div><div class="line">log4jdbc.sqltiming.error.threshold=<span class="number">3000</span></div><div class="line">log4jdbc.dump.booleanastruefalse=<span class="keyword">true</span></div><div class="line">log4jdbc.dump.sql.maxlinelength=<span class="number">90</span></div><div class="line">log4jdbc.dump.fulldebugstacktrace=<span class="keyword">false</span></div><div class="line"></div><div class="line">log4jdbc.dump.sql.select=<span class="keyword">true</span></div><div class="line">log4jdbc.dump.sql.insert=<span class="keyword">true</span></div><div class="line">log4jdbc.dump.sql.delete=<span class="keyword">true</span></div><div class="line">log4jdbc.dump.sql.update=<span class="keyword">true</span></div><div class="line">log4jdbc.dump.sql.create=<span class="keyword">true</span></div><div class="line">log4jdbc.dump.sql.addsemicolon=<span class="keyword">false</span></div><div class="line"></div><div class="line">log4jdbc.trim.sql=<span class="keyword">true</span></div><div class="line">log4jdbc.trim.sql.extrablanklines=<span class="keyword">true</span></div><div class="line">log4jdbc.suppress.generated.keys.exception=<span class="keyword">false</span></div></pre></td></tr></table></figure>
+</li>
+</ol>
+<h3 id="4-0-2-测试"><a href="#4-0-2-测试" class="headerlink" title="4.0.2 测试"></a>4.0.2 测试</h3><pre><code><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">import</span> java.io.IOException;</div><div class="line"><span class="keyword">import</span> java.io.InputStream;</div><div class="line"><span class="keyword">import</span> java.sql.Connection;</div><div class="line"><span class="keyword">import</span> java.sql.DriverManager;</div><div class="line"><span class="keyword">import</span> java.sql.PreparedStatement;</div><div class="line"><span class="keyword">import</span> java.sql.SQLException;</div><div class="line"><span class="keyword">import</span> java.util.Properties;</div><div class="line"></div><div class="line"><span class="keyword">import</span> org.junit.Test;</div><div class="line"></div><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SimpleTest</span> </span>&#123;</div><div class="line"></div><div class="line">	<span class="meta">@Test</span></div><div class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">test1</span><span class="params">()</span> </span>&#123;</div><div class="line">		String sql = <span class="string">"select * "</span> + <span class="string">"from t_user where id=?"</span>;</div><div class="line">		Connection conn = <span class="keyword">null</span>;</div><div class="line">		PreparedStatement ps = <span class="keyword">null</span>;</div><div class="line">		<span class="keyword">try</span> &#123;</div><div class="line">			conn = getConnection();</div><div class="line">			ps = conn.prepareStatement(sql);</div><div class="line">			ps.setInt(<span class="number">1</span>, <span class="number">2</span>);</div><div class="line">			ps.executeQuery();</div><div class="line">		&#125; <span class="keyword">catch</span> (ClassNotFoundException e) &#123;</div><div class="line">			e.printStackTrace();</div><div class="line">		&#125; <span class="keyword">catch</span> (IOException e) &#123;</div><div class="line">			e.printStackTrace();</div><div class="line">		&#125; <span class="keyword">catch</span> (SQLException e) &#123;</div><div class="line">			e.printStackTrace();</div><div class="line">		&#125;</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	<span class="function"><span class="keyword">public</span> Connection <span class="title">getConnection</span><span class="params">()</span> <span class="keyword">throws</span> IOException, SQLException,</span></div><div class="line"><span class="function">			ClassNotFoundException </span>&#123;</div><div class="line">		String driverClassName = <span class="keyword">null</span>;</div><div class="line">		String jdbcUrl = <span class="keyword">null</span>;</div><div class="line">		String user = <span class="keyword">null</span>;</div><div class="line">		String password = <span class="keyword">null</span>;</div><div class="line">		<span class="comment">// 读取类路径下的配置文件</span></div><div class="line">		InputStream in = getClass().getClassLoader().getResourceAsStream(</div><div class="line">				<span class="string">"dbconfig.properties"</span>);</div><div class="line">		Properties properties = <span class="keyword">new</span> Properties();</div><div class="line">		properties.load(in);</div><div class="line">		driverClassName = properties.getProperty(<span class="string">"driverClassName"</span>);</div><div class="line">		jdbcUrl = properties.getProperty(<span class="string">"url"</span>);</div><div class="line">		user = properties.getProperty(<span class="string">"username"</span>);</div><div class="line">		password = properties.getProperty(<span class="string">"password"</span>);</div><div class="line">		Class.forName(driverClassName);</div><div class="line">		<span class="comment">// 连接信息</span></div><div class="line">		Properties info = <span class="keyword">new</span> Properties();</div><div class="line">		info.put(<span class="string">"user"</span>, user);</div><div class="line">		info.put(<span class="string">"password"</span>, password);</div><div class="line">		<span class="comment">// 获取连接</span></div><div class="line">		Connection connection = DriverManager.getConnection(jdbcUrl, user,</div><div class="line">				password);</div><div class="line">		<span class="keyword">return</span> connection;</div><div class="line">	&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</code></pre><h2 id="4-1-DataSource–c3p0"><a href="#4-1-DataSource–c3p0" class="headerlink" title="4.1 DataSource–c3p0"></a>4.1 DataSource–c3p0</h2><p>截至目前为止，<a href="https://code.google.com/p/log4jdbc/" title="log4jdbc home page" target="_blank" rel="external">官网</a> 对于log4jdbc和数据源的使用还没有一个很好地例子,以下是官网的截图:<br><img src="http://img.blog.csdn.net/20150801162601848" alt="log4jdbc对于数据源的说明"></p>
+<p>本人尝试了一下C3P0数据源，不到之处请指正。</p>
+<h3 id="4-1-0-jar包"><a href="#4-1-0-jar包" class="headerlink" title="4.1.0 jar包"></a>4.1.0 jar包</h3><p><strong>maven 依赖</strong><br><figure class="highlight xml"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div></pre></td><td class="code"><pre><div class="line"><span class="tag">&lt;<span class="name">dependencies</span>&gt;</span></div><div class="line">	<span class="tag">&lt;<span class="name">dependency</span>&gt;</span></div><div class="line">		<span class="tag">&lt;<span class="name">groupId</span>&gt;</span>junit<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></div><div class="line">		<span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>junit<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></div><div class="line">		<span class="tag">&lt;<span class="name">version</span>&gt;</span>4.4<span class="tag">&lt;/<span class="name">version</span>&gt;</span></div><div class="line">		<span class="tag">&lt;<span class="name">scope</span>&gt;</span>test<span class="tag">&lt;/<span class="name">scope</span>&gt;</span></div><div class="line">	<span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></div><div class="line">	<span class="tag">&lt;<span class="name">dependency</span>&gt;</span></div><div class="line">		<span class="tag">&lt;<span class="name">groupId</span>&gt;</span>com.googlecode.log4jdbc<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></div><div class="line">		<span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>log4jdbc<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></div><div class="line">		<span class="tag">&lt;<span class="name">version</span>&gt;</span>1.2<span class="tag">&lt;/<span class="name">version</span>&gt;</span></div><div class="line">	<span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></div><div class="line">	<span class="tag">&lt;<span class="name">dependency</span>&gt;</span></div><div class="line">		<span class="tag">&lt;<span class="name">groupId</span>&gt;</span>mysql<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></div><div class="line">		<span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>mysql-connector-java<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></div><div class="line">		<span class="tag">&lt;<span class="name">version</span>&gt;</span>5.1.35<span class="tag">&lt;/<span class="name">version</span>&gt;</span></div><div class="line">	<span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></div><div class="line">	<span class="tag">&lt;<span class="name">dependency</span>&gt;</span></div><div class="line">		<span class="tag">&lt;<span class="name">groupId</span>&gt;</span>log4j<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></div><div class="line">		<span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>log4j<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></div><div class="line">		<span class="tag">&lt;<span class="name">version</span>&gt;</span>1.2.16<span class="tag">&lt;/<span class="name">version</span>&gt;</span></div><div class="line">	<span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></div><div class="line">	<span class="tag">&lt;<span class="name">dependency</span>&gt;</span></div><div class="line">		<span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.slf4j<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></div><div class="line">		<span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>slf4j-log4j12<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></div><div class="line">		<span class="tag">&lt;<span class="name">version</span>&gt;</span>1.6.0<span class="tag">&lt;/<span class="name">version</span>&gt;</span></div><div class="line">	<span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></div><div class="line">	<span class="tag">&lt;<span class="name">dependency</span>&gt;</span></div><div class="line">		<span class="tag">&lt;<span class="name">groupId</span>&gt;</span>c3p0<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></div><div class="line">		<span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>c3p0<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></div><div class="line">		<span class="tag">&lt;<span class="name">version</span>&gt;</span>0.9.1.2<span class="tag">&lt;/<span class="name">version</span>&gt;</span></div><div class="line">	<span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></div><div class="line"><span class="tag">&lt;/<span class="name">dependencies</span>&gt;</span></div></pre></td></tr></table></figure></p>
+<h3 id="4-1-1-配置文件"><a href="#4-1-1-配置文件" class="headerlink" title="4.1.1 配置文件"></a>4.1.1 配置文件</h3><blockquote>
+<p>此处只需要 log4j.properties 和log4jdbc.properties 两个配置文件即可，配置同4.0中的配置文件。</p>
+</blockquote>
+<h3 id="4-1-2-测试"><a href="#4-1-2-测试" class="headerlink" title="4.1.2 测试"></a>4.1.2 测试</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">package</span> software_test.log4jdbc;</div><div class="line"></div><div class="line"><span class="keyword">import</span> java.sql.Connection;</div><div class="line"><span class="keyword">import</span> java.sql.PreparedStatement;</div><div class="line"></div><div class="line"><span class="keyword">import</span> org.junit.Test;</div><div class="line"></div><div class="line"><span class="keyword">import</span> com.mchange.v2.c3p0.ComboPooledDataSource;</div><div class="line"></div><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">DataSourceTest</span> </span>&#123;</div><div class="line"></div><div class="line">	<span class="meta">@Test</span></div><div class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testC3P0</span><span class="params">()</span> </span>&#123;</div><div class="line">		<span class="keyword">try</span> &#123;</div><div class="line">			ComboPooledDataSource dataSource = <span class="keyword">new</span> ComboPooledDataSource();</div><div class="line">			dataSource.setUser(<span class="string">"root"</span>);</div><div class="line">			dataSource.setPassword(<span class="string">"1234"</span>);</div><div class="line">			dataSource.setDriverClass(<span class="string">"net.sf.log4jdbc.DriverSpy"</span>);</div><div class="line">			dataSource.setJdbcUrl(<span class="string">"jdbc:log4jdbc:mysql://localhost:3306/mvn"</span>);</div><div class="line">			dataSource.setMaxPoolSize(<span class="number">50</span>);</div><div class="line">			Connection conn = dataSource.getConnection();</div><div class="line">			String sql = <span class="string">"select * "</span> + <span class="string">"from t_user where id=?"</span>;</div><div class="line">			PreparedStatement ps = <span class="keyword">null</span>;</div><div class="line">			ps = conn.prepareStatement(sql);</div><div class="line">			ps.setInt(<span class="number">1</span>, <span class="number">2</span>);</div><div class="line">			ps.executeQuery();</div><div class="line">			ps.close();</div><div class="line">			conn.close();</div><div class="line">		&#125; <span class="keyword">catch</span> (Exception e) &#123;</div><div class="line">			e.printStackTrace();</div><div class="line">		&#125;</div><div class="line">	&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h1 id="5-声明"><a href="#5-声明" class="headerlink" title="5 声明"></a>5 声明</h1><blockquote>
+<p>在此将log4jdbc的使用结合官网的帮助文档中主要的一部分罗列出来。部分不太常用或理解不到位的没有翻译，怕误人子弟，有翻译不周的地方或理解不到位的地方欢迎指正。<br>实战部分，以后会抽时间加入其它的使用方式。</p>
+<font color="red"><strong>转载请保留出处。</strong></font></blockquote>
+</div><div class="tags"><a href="/tags/logging/">logging</a></div><div class="post-nav"><a href="/2017/03/15/scala-01-List操作/" class="pre">scala-01-List操作.md</a></div></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/99-problems-in-scala/">99-problems-in-scala</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-多线程/">Java-多线程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JavaSE/">JavaSE</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/LeetCode/">LeetCode</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/NIO/">NIO</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/app-server/">app-server</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/docker/">docker</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/http-server/">http-server</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kafka/">kafka</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/logging/">logging</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/maven/">maven</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/other/">other</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/scala/">scala</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/spark/">spark</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/spring-cloud/">spring-cloud</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/zookeeper/">zookeeper</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/安全/">安全</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/排序/">排序</a><span class="category-list-count">1</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-star-o"> 标签</i></div><div class="tagcloud"><a href="/tags/scala/" style="font-size: 15px;">scala</a> <a href="/tags/JVM/" style="font-size: 15px;">JVM</a> <a href="/tags/LeetCode/" style="font-size: 15px;">LeetCode</a> <a href="/tags/docker/" style="font-size: 15px;">docker</a> <a href="/tags/git/" style="font-size: 15px;">git</a> <a href="/tags/apache-httpd/" style="font-size: 15px;">apache/httpd</a> <a href="/tags/keytool/" style="font-size: 15px;">keytool</a> <a href="/tags/非对称加密/" style="font-size: 15px;">非对称加密</a> <a href="/tags/jt-808/" style="font-size: 15px;">jt-808</a> <a href="/tags/kafka/" style="font-size: 15px;">kafka</a> <a href="/tags/mysql/" style="font-size: 15px;">mysql</a> <a href="/tags/linux/" style="font-size: 15px;">linux</a> <a href="/tags/NIO/" style="font-size: 15px;">NIO</a> <a href="/tags/logging/" style="font-size: 15px;">logging</a> <a href="/tags/redis/" style="font-size: 15px;">redis</a> <a href="/tags/安全/" style="font-size: 15px;">安全</a> <a href="/tags/spark/" style="font-size: 15px;">spark</a> <a href="/tags/spring-cloud/" style="font-size: 15px;">spring-cloud</a> <a href="/tags/ssh/" style="font-size: 15px;">ssh</a> <a href="/tags/tomcat/" style="font-size: 15px;">tomcat</a> <a href="/tags/zookeeper/" style="font-size: 15px;">zookeeper</a> <a href="/tags/bit/" style="font-size: 15px;">bit</a> <a href="/tags/maven/" style="font-size: 15px;">maven</a> <a href="/tags/排序/" style="font-size: 15px;">排序</a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/java多线程-01-基本概念/">java多线程-01-基本概念</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/problem01-05/">problem01-05</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/git-01-简介、安装和配置/">git-01-简介、安装和配置</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/httpd系列-00-安装/">httpd系列-00-安装</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/排序算法-01-冒泡排序/">排序算法-01-冒泡排序排序算法-01-冒泡排序</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/java秘钥、证书管理工具-keytool/">java秘钥、证书管理工具-keytool</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/tomcat系列-01-名词解释/">tomcat系列-01-名词解释</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/shiro-常用filter/">shiro-常用filter</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/docker筑基篇-00-docker简介/">docker筑基篇-00-docker简介</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/常见加密类型及通信安全/">常见加密类型及通信安全</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-external-link"> 友情链接</i></div><ul></ul><a href="http://www.example1.com/" title="site-name1" target="_blank">site-name1</a><ul></ul><a href="http://www.example2.com/" title="site-name2" target="_blank">site-name2</a><ul></ul><a href="http://www.example3.com/" title="site-name3" target="_blank">site-name3</a></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2017 <a href="/." rel="nofollow">宛丘.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a id="rocket" href="#top" class="show"></a><script type="text/javascript" src="/js/totop.js?v=0.0.0" async></script><script type="text/javascript" src="//cdn.bootcss.com/fancybox/3.1.20/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=0.0.0" async></script><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/fancybox/3.1.20/jquery.fancybox.min.css"><script type="text/javascript" src="/js/codeblock-resizer.js?v=0.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=0.0.0"></script></div></body></html>

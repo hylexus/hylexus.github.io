@@ -1,0 +1,157 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description"><title>位操作 | 宛丘</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=0.0.0"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/normalize/7.0.0/normalize.min.css"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/pure/1.0.0/pure-min.css"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/pure/1.0.0/grids-responsive-min.css"><link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css"><script type="text/javascript" src="//cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script><link rel="Shortcut Icon" type="image/x-icon" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">位操作</h1><a id="logo" href="/.">宛丘</a><p class="description"></p></div><div id="nav-menu"><a href="/." class="current"><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div id="layout" class="pure-g"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">位操作</h1><div class="post-meta">Sep 14, 2017<span> | </span><span class="category"><a href="/categories/JavaSE/">JavaSE</a></span></div><div class="post-content"><h1 id="基础概念"><a href="#基础概念" class="headerlink" title="基础概念"></a>基础概念</h1><h2 id="位"><a href="#位" class="headerlink" title="位"></a>位</h2><ul>
+<li>也称比特，记为bit(binary digit的缩写)或小写b</li>
+<li>这是最小的信息单位，是用0或1来表示的1个二进制数位</li>
+</ul>
+<h2 id="字节"><a href="#字节" class="headerlink" title="字节"></a>字节</h2><ul>
+<li>记为Byte或大写B，这是计算机的最小存储单元</li>
+<li>PC机中由8个二进制位构成一个字节，从最小的00000000到最大的11111111，即一个字节可有256个值。</li>
+<li>一个字节也可以表示由8个二进制位构成的其它信息。</li>
+<li>一个字节可存放一个半角英文字符的编码( ASCII码)。</li>
+<li>两个字节可存放一个汉字编码。1个汉字至少需要两个字节或两个字符来表示。这里所说的字符是指ASCII码字符，即半角下的英文字母、数字或其它符号。</li>
+</ul>
+<h2 id="字"><a href="#字" class="headerlink" title="字"></a>字</h2><ul>
+<li>记为word或小写w，是计算机信息交换、加工、存储的基本单元。</li>
+<li>用二进制代码表示，一个字由一个字节或若干字节构成(不同机器的字长不同)。</li>
+<li>它可以代表数据代码、字符代码、 操作码和地址码或它们的组合。计算机的“字”用来表示数据或信息长度。</li>
+</ul>
+<h2 id="单位转换"><a href="#单位转换" class="headerlink" title="单位转换"></a>单位转换</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">K (KiloBytes，千) 字节	1KB = 1024 byte =2^10 byte</div><div class="line">M（MegaBytes，兆）字节	1MB = 1024 K =2^20 byte</div><div class="line">G（GigaBytes，吉）字节	1GB = 1024 M =2^30 byte</div><div class="line">T（TeraBytes，太）字节	1TB = 1024 G =2^40 byte</div><div class="line">P（PetaBytes，拍）字节	1PB = 1024 T =2^50 byte</div></pre></td></tr></table></figure>
+<h2 id="数字的表示"><a href="#数字的表示" class="headerlink" title="数字的表示"></a>数字的表示</h2><p>计算机数字有原码、反码、补码三种存储格式，通常都是补码。</p>
+<ul>
+<li>正数的补码和原码相同<ul>
+<li>正数的原码、反码、补码都相同</li>
+</ul>
+</li>
+<li>负数的补码<ul>
+<li>符号位为1</li>
+<li>其余各位是对原码取反</li>
+<li>然后整个数加1</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>比如:</p>
+</blockquote>
+<ul>
+<li><p>+7的补码: 0000 0111 </p>
+</li>
+<li><p>-7的补码</p>
+</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">1(000 0111) //符号位为1</div><div class="line">1111 1000 //对原码取反</div><div class="line">1111 1001 //加1</div></pre></td></tr></table></figure>
+<blockquote>
+<p>注意，以下所示的 <code>基本规则</code> 中的0和1表示的都是 <code>进制位</code>。</p>
+</blockquote>
+<h1 id="与-amp"><a href="#与-amp" class="headerlink" title="与(&amp;)"></a>与(&amp;)</h1><h2 id="基本规则"><a href="#基本规则" class="headerlink" title="基本规则"></a>基本规则</h2><blockquote>
+<p>同时为1得1,否则为0</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">0 &amp; 0 == 0</div><div class="line">0 &amp; 1 == 0</div><div class="line">1 &amp; 0 == 0</div><div class="line">1 &amp; 1 == 1</div></pre></td></tr></table></figure>
+<h2 id="常用技巧"><a href="#常用技巧" class="headerlink" title="常用技巧"></a>常用技巧</h2><ul>
+<li>用0 “遮盖” 掉不需要的位<ul>
+<li>x &amp; 0 == 0</li>
+</ul>
+</li>
+</ul>
+<h1 id="或"><a href="#或" class="headerlink" title="或(|)"></a>或(|)</h1><h2 id="基本规则-1"><a href="#基本规则-1" class="headerlink" title="基本规则"></a>基本规则</h2><blockquote>
+<p>同时为零得0,否则为1</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">0 | 0 == 0</div><div class="line">0 | 1 == 1</div><div class="line">1 | 0 == 1</div><div class="line">1 | 1 == 1</div></pre></td></tr></table></figure>
+<h1 id="非"><a href="#非" class="headerlink" title="非(~)"></a>非(~)</h1><h2 id="基本规则-2"><a href="#基本规则-2" class="headerlink" title="基本规则"></a>基本规则</h2><blockquote>
+<p>按位取反，0变1,1变0</p>
+</blockquote>
+<h1 id="异或"><a href="#异或" class="headerlink" title="异或(^)"></a>异或(^)</h1><h2 id="基本规则-3"><a href="#基本规则-3" class="headerlink" title="基本规则"></a>基本规则</h2><blockquote>
+<p>相同得0,不同得1</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">0 ^ 0 == 0</div><div class="line">0 ^ 1 == 1</div><div class="line">1 ^ 0 == 1</div><div class="line">1 ^ 1 == 0</div></pre></td></tr></table></figure>
+<h2 id="常用技巧-1"><a href="#常用技巧-1" class="headerlink" title="常用技巧"></a>常用技巧</h2><ul>
+<li>开关位</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">1 ^ 1 == 0</div><div class="line">1 ^ 1 ^ 1 == 1</div><div class="line">1 ^ 1 ^ 1 ^ 1 == 0</div><div class="line">1 ^ 1 ^ 1 ^ 1 ^ 1 == 1</div><div class="line">1 ^ 1 ^ 1 ^ 1 ^ 1 ^ 1 == 0</div></pre></td></tr></table></figure>
+<ul>
+<li><p>x ^ y ^ y == x </p>
+</li>
+<li><p>x ^ x == 0</p>
+<ul>
+<li>x可以是任意整数</li>
+<li>所以可用来比较两个数否是相等</li>
+</ul>
+</li>
+</ul>
+<h1 id="移位"><a href="#移位" class="headerlink" title="移位"></a>移位</h1><h2 id="左移"><a href="#左移" class="headerlink" title="左移"></a>左移</h2><h3 id="基本规则-4"><a href="#基本规则-4" class="headerlink" title="基本规则"></a>基本规则</h3><ul>
+<li>左移后空出来的低位补零</li>
+<li>最高位由于挪动可能导致0/1更替使得数字符号位发生改变</li>
+<li>左移一位相当于乘2</li>
+</ul>
+<blockquote>
+<p>例子</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">6 &lt;&lt; 2 == 24</div><div class="line"></div><div class="line">00000000 00000000 00000000 00000110 (6)</div><div class="line">00000000 00000000 00000000 00011000 (6 &lt;&lt; 2)</div></pre></td></tr></table></figure>
+<h3 id="常用技巧-2"><a href="#常用技巧-2" class="headerlink" title="常用技巧"></a>常用技巧</h3><p>对于正数和负数,在数字没有溢出的前提下:</p>
+<ul>
+<li>m&lt;&lt;1:左移1位相当于m乘以2的1次方,即乘以2.</li>
+<li>m&lt;&lt;n:左移n位相当于m乘以2的n次方.</li>
+</ul>
+<h2 id="右移"><a href="#右移" class="headerlink" title="右移"></a>右移</h2><h3 id="基本规则-5"><a href="#基本规则-5" class="headerlink" title="基本规则"></a>基本规则</h3><ul>
+<li>右移后的高位<ul>
+<li>正数补0</li>
+<li>负数补1</li>
+</ul>
+</li>
+<li>移动的时候考虑符号位,所以又称带符号右移</li>
+<li>正数右移一位相当于除以2</li>
+</ul>
+<blockquote>
+<p>例子</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">6 &gt;&gt; 2 == 1</div><div class="line"></div><div class="line">00000000 00000000 00000000 00000110 (6)</div><div class="line">00000000 00000000 00000000 00000001 (6 &gt;&gt; 2)</div><div class="line"></div><div class="line">-3 &gt;&gt; 1 == -2</div><div class="line">11111111 11111111 11111111 11111101 (-3-----补码)</div><div class="line">11111111 11111111 11111111 11111110 (-2-----补码)</div></pre></td></tr></table></figure>
+<h3 id="常用技巧-3"><a href="#常用技巧-3" class="headerlink" title="常用技巧"></a>常用技巧</h3><p>m &gt;&gt; n:即相当于m除以2的n次方</p>
+<ul>
+<li>得到的为整数时,即为结果</li>
+<li>得到的为小数时<ul>
+<li>如果m为正数,得到的商会舍弃小数位</li>
+<li>如果m为负数,舍弃小数部分，然后把整数部分加+1得到位移后的值 </li>
+</ul>
+</li>
+</ul>
+<h2 id="无符号右移"><a href="#无符号右移" class="headerlink" title="无符号右移"></a>无符号右移</h2><blockquote>
+<p>和右移的区别是:无论正负数，都在高位补0</p>
+<p>例子:</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">-3 &gt;&gt;&gt; 1 ==2147483646</div><div class="line"></div><div class="line">11111111 11111111 11111111 11111101(-3-----补码)</div><div class="line">01111111 11111111 11111111 11111110(右移1位高位补0而不是1)</div></pre></td></tr></table></figure>
+<h1 id="应用"><a href="#应用" class="headerlink" title="应用"></a>应用</h1><h2 id="正负数切换"><a href="#正负数切换" class="headerlink" title="正负数切换"></a>正负数切换</h2><p>由原码反码补码的知识很容易得到如下结论:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">~x + 1 == -x</div></pre></td></tr></table></figure>
+<h2 id="求绝对值"><a href="#求绝对值" class="headerlink" title="求绝对值"></a>求绝对值</h2><ul>
+<li>正数===&gt;符号位为0===&gt;zishen</li>
+<li>负数===&gt;符号位为1===&gt;相反数</li>
+</ul>
+<p>问题就在如何获取符号位了：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">x &gt;&gt; (size-1) ==========&gt; 最左边的符号位,size为数字总的位长度,java的int为32个bit</div></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">abs</span><span class="params">(<span class="keyword">int</span> x)</span> </span>&#123;</div><div class="line">	<span class="keyword">return</span> x &gt;&gt; (Integer.SIZE - <span class="number">1</span>) == <span class="number">0</span> ? x : ~x + <span class="number">1</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="判断奇偶数"><a href="#判断奇偶数" class="headerlink" title="判断奇偶数"></a>判断奇偶数</h2><p>通常我们判断一个数是奇数还是偶数都是用取模运算,但是这个效率有点底下了。<br>本人在一次面试的时候就遇到面试题让我写出最快的判断奇数偶数的方法。<br>计算机里最快的无非是位运算了。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">(x &amp; 1) == 1 则x是奇数</div><div class="line">(x &amp; 1) == 0 则x是偶数</div></pre></td></tr></table></figure>
+<blockquote>
+<p>原理: </p>
+</blockquote>
+<p>奇数偶数的奇偶,关键就看最后一位了.<br>所以考虑只保留最后一位,其余的位都和0相与而“遮盖”掉.</p>
+<blockquote>
+<p>例如:</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">00011010 (26)</div><div class="line">00000001 (1)</div><div class="line">-------------</div><div class="line">00000000 (0)===&gt;偶数</div><div class="line"></div><div class="line"></div><div class="line">00011001 (25)</div><div class="line">00000001 (1)</div><div class="line">------------</div><div class="line">00000001 (1)===&gt;奇数</div></pre></td></tr></table></figure>
+<h2 id="大小写转换"><a href="#大小写转换" class="headerlink" title="大小写转换"></a>大小写转换</h2><p>对于同一个字母而言，其对应的ASCII码的差值的绝对值刚好是32。<br>所以,我们常规的转换也就是对其对应的ASCII码加上或者减去32,即可得到其对应的大写或者小写字母了。</p>
+<p>恰好这个差值32是2^5==0b100000==0x20,或许当初ASCII定制的时候就考虑到这点了吧。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">// 这里的c和C代表a-zA-Z中的任意一个字符。</div><div class="line">c ^ 0x20 == C</div><div class="line">C ^ 0x20 == c</div></pre></td></tr></table></figure>
+<blockquote>
+<p>例如:</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">&apos;a&apos;====&gt;97====&gt;01100001</div><div class="line">&apos;A&apos;====&gt;65====&gt;01000001</div><div class="line">        32====&gt;00100000</div><div class="line"></div><div class="line">就差倒数第六位的1====&gt;0b100000===&gt;0x20。</div></pre></td></tr></table></figure>
+<blockquote>
+<p>原理</p>
+</blockquote>
+<p>大小和小写字母的ASCII码之间就差倒数第六位的1或0<br>所以转换大小写只需考虑将倒数第六位取反即可。其余位不变。</p>
+<p>所以可以用异或的特性来做开关位切换倒数第六位的0或者1。</p>
+<h2 id="交换两个数"><a href="#交换两个数" class="headerlink" title="交换两个数"></a>交换两个数</h2><p>平常我们的做法就是找第三个数作为临时的交换空间，有一次遇到了有人用这个方式交换的。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">int</span> a = <span class="number">9</span>;</div><div class="line"><span class="keyword">int</span> b = <span class="number">10</span>;</div><div class="line">a = a ^ b;</div><div class="line">b = a ^ b;</div><div class="line">a = a ^ b;</div><div class="line">System.out.println(a); <span class="comment">//10</span></div><div class="line">System.out.println(b); <span class="comment">//9</span></div></pre></td></tr></table></figure>
+<h2 id="十进制整数转为二进制字符串"><a href="#十进制整数转为二进制字符串" class="headerlink" title="十进制整数转为二进制字符串"></a>十进制整数转为二进制字符串</h2><p>尽量不适用任何内置库函数和内置类，只使用最基本的操作完成整数到二进制字符串的转换。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">// i&gt;=0 &amp;&amp; i&lt;Integer.SIZE</div><div class="line"></div><div class="line">// 1. 倒数第i位后跟i个0</div><div class="line">//比如i为3时可能为1000(倒数第三位为1)或0000(倒数第三位为0)</div><div class="line">x &amp; (1&lt;&lt;i) </div><div class="line"></div><div class="line">// 2.倒数第i位</div><div class="line">(x &amp; (1&lt;&lt;i)) &gt;&gt; i</div></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">public</span> String <span class="title">toBinaryString</span><span class="params">(<span class="keyword">int</span> x)</span> </span>&#123;</div><div class="line">	<span class="keyword">char</span> bts[] = <span class="keyword">new</span> <span class="keyword">char</span>[Integer.SIZE];</div><div class="line">	<span class="comment">//或者可以将循环倒过来处理</span></div><div class="line">	<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; Integer.SIZE; i++) &#123;</div><div class="line">		bts[Integer.SIZE - <span class="number">1</span> - i] = (x &amp; (<span class="number">1</span> &lt;&lt; i)) &gt;&gt; i == <span class="number">0</span> ? <span class="string">'0'</span> : <span class="string">'1'</span>;</div><div class="line">	&#125;</div><div class="line">	<span class="keyword">return</span> <span class="keyword">new</span> String(bts);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="字符串和十六进制字符串互转"><a href="#字符串和十六进制字符串互转" class="headerlink" title="字符串和十六进制字符串互转"></a>字符串和十六进制字符串互转</h2><p><a href="http://blog.csdn.net/hylexus/article/details/52735975" target="_blank" rel="external">java字符串和十六进制字符串互转</a></p>
+</div><div class="tags"><a href="/tags/bit/">bit</a></div><div class="post-nav"><a href="/2017/09/14/常见加密类型及通信安全/" class="pre">常见加密类型及通信安全</a><a href="/2017/09/14/使用maven创建scala工程/" class="next">使用maven创建scala工程</a></div></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/99-problems-in-scala/">99-problems-in-scala</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-多线程/">Java-多线程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JavaSE/">JavaSE</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/LeetCode/">LeetCode</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/NIO/">NIO</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/app-server/">app-server</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/docker/">docker</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/http-server/">http-server</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kafka/">kafka</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/logging/">logging</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/maven/">maven</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/other/">other</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/scala/">scala</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/spark/">spark</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/spring-cloud/">spring-cloud</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/zookeeper/">zookeeper</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/安全/">安全</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/排序/">排序</a><span class="category-list-count">1</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-star-o"> 标签</i></div><div class="tagcloud"><a href="/tags/scala/" style="font-size: 15px;">scala</a> <a href="/tags/JVM/" style="font-size: 15px;">JVM</a> <a href="/tags/LeetCode/" style="font-size: 15px;">LeetCode</a> <a href="/tags/docker/" style="font-size: 15px;">docker</a> <a href="/tags/git/" style="font-size: 15px;">git</a> <a href="/tags/apache-httpd/" style="font-size: 15px;">apache/httpd</a> <a href="/tags/keytool/" style="font-size: 15px;">keytool</a> <a href="/tags/非对称加密/" style="font-size: 15px;">非对称加密</a> <a href="/tags/jt-808/" style="font-size: 15px;">jt-808</a> <a href="/tags/kafka/" style="font-size: 15px;">kafka</a> <a href="/tags/mysql/" style="font-size: 15px;">mysql</a> <a href="/tags/linux/" style="font-size: 15px;">linux</a> <a href="/tags/NIO/" style="font-size: 15px;">NIO</a> <a href="/tags/logging/" style="font-size: 15px;">logging</a> <a href="/tags/redis/" style="font-size: 15px;">redis</a> <a href="/tags/安全/" style="font-size: 15px;">安全</a> <a href="/tags/spark/" style="font-size: 15px;">spark</a> <a href="/tags/spring-cloud/" style="font-size: 15px;">spring-cloud</a> <a href="/tags/ssh/" style="font-size: 15px;">ssh</a> <a href="/tags/tomcat/" style="font-size: 15px;">tomcat</a> <a href="/tags/zookeeper/" style="font-size: 15px;">zookeeper</a> <a href="/tags/bit/" style="font-size: 15px;">bit</a> <a href="/tags/maven/" style="font-size: 15px;">maven</a> <a href="/tags/排序/" style="font-size: 15px;">排序</a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/java多线程-01-基本概念/">java多线程-01-基本概念</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/problem01-05/">problem01-05</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/git-01-简介、安装和配置/">git-01-简介、安装和配置</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/httpd系列-00-安装/">httpd系列-00-安装</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/排序算法-01-冒泡排序/">排序算法-01-冒泡排序排序算法-01-冒泡排序</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/java秘钥、证书管理工具-keytool/">java秘钥、证书管理工具-keytool</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/tomcat系列-01-名词解释/">tomcat系列-01-名词解释</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/shiro-常用filter/">shiro-常用filter</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/docker筑基篇-00-docker简介/">docker筑基篇-00-docker简介</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/常见加密类型及通信安全/">常见加密类型及通信安全</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-external-link"> 友情链接</i></div><ul></ul><a href="http://www.example1.com/" title="site-name1" target="_blank">site-name1</a><ul></ul><a href="http://www.example2.com/" title="site-name2" target="_blank">site-name2</a><ul></ul><a href="http://www.example3.com/" title="site-name3" target="_blank">site-name3</a></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2017 <a href="/." rel="nofollow">宛丘.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a id="rocket" href="#top" class="show"></a><script type="text/javascript" src="/js/totop.js?v=0.0.0" async></script><script type="text/javascript" src="//cdn.bootcss.com/fancybox/3.1.20/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=0.0.0" async></script><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/fancybox/3.1.20/jquery.fancybox.min.css"><script type="text/javascript" src="/js/codeblock-resizer.js?v=0.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=0.0.0"></script></div></body></html>
