@@ -1,0 +1,236 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description"><title>JVM系列-02-GC-扫盲 | 宛丘</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=0.0.0"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/normalize/7.0.0/normalize.min.css"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/pure/1.0.0/pure-min.css"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/pure/1.0.0/grids-responsive-min.css"><link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css"><script type="text/javascript" src="//cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script><link rel="Shortcut Icon" type="image/x-icon" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">JVM系列-02-GC-扫盲</h1><a id="logo" href="/.">宛丘</a><p class="description"></p></div><div id="nav-menu"><a href="/." class="current"><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div id="layout" class="pure-g"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">JVM系列-02-GC-扫盲</h1><div class="post-meta">Mar 15, 2017<span> | </span><span class="category"><a href="/categories/JVM/">JVM</a></span></div><div class="post-content"><h1 id="声明"><a href="#声明" class="headerlink" title="声明"></a>声明</h1><p>本篇文章是本人阅读《深入理解JVM》和《java虚拟机规范》时的笔记。<br>记录的都是一些概念性的东西。<br>JVM是HotSpot，jdk1.7。<br>大神绕路，不喜勿喷。</p>
+<h1 id="1-GC算法"><a href="#1-GC算法" class="headerlink" title="1 GC算法"></a>1 GC算法</h1><p>先来走马观花般地浏览一些著名的GC算法。<br>这里也仅仅是说一下大致过程，具体细节的介绍对于我一个Java程序员来说表示无能为力,因为底层实现要牵扯到具体的实现语言了，而且不同的JVM实现商肯定有不同的实现细节。</p>
+<h2 id="1-1-标记-清除算法"><a href="#1-1-标记-清除算法" class="headerlink" title="1.1 标记/清除算法"></a>1.1 标记/清除算法</h2><p>这种算法的大概过程是:</p>
+<ul>
+<li>标记出所有需要回收的对象</li>
+<li>统一回收所有被标记的对象</li>
+</ul>
+<p>这种算法很直观，但他的缺点如下：</p>
+<ul>
+<li>标记和清除的两个阶段，效率并不是很好，因为回收的粒度太细了</li>
+<li>清除后的内存区域一般都是千疮百孔，可用内存区域一般都不连续</li>
+</ul>
+<h2 id="1-2-复制算法"><a href="#1-2-复制算法" class="headerlink" title="1.2 复制算法"></a>1.2 复制算法</h2><p>上面说的标记/清除算法不太好的主要原因就是其<code>回收粒度</code>太过细微了。<br>签于此，复制算法的主要做法是：</p>
+<ul>
+<li>将内存分为大小相等的两块，暂且称之为内存块</li>
+<li>每次当某一内存块(A)占满之后，将该内存块(A)的有用数据复制到另外一块内存块(B)</li>
+<li>将A内存块的整个块直接清除</li>
+</ul>
+<p>这种算法相比于标记/清除算法的最大特点是：</p>
+<ul>
+<li>每次回收都是以内存块为单位(粒度较大)</li>
+<li>只有两个内存块，收集完后内存不连续的情况也就不用考虑了</li>
+<li>但是，将整个内存分为两块，实际的可用内存也就减半了(这就有点无法接受了)</li>
+<li>存在大量的对象复制操作</li>
+</ul>
+<h2 id="1-3-标记-整理算法"><a href="#1-3-标记-整理算法" class="headerlink" title="1.3 标记/整理算法"></a>1.3 标记/整理算法</h2><p>上面说的复制算法的最大缺点就是对象的复制操作。尤其是在有效的对象很多的情况下。</p>
+<p>这里的标记/整理算法的大致过程是:</p>
+<ul>
+<li>标记应该回收的区域</li>
+<li>将有用的对象/数据集中移动到一块区域,暂且称之为”有效区”,有效区的位置往往是在两端的某一端</li>
+<li>将”有效区”之外的区域集体清理</li>
+</ul>
+<h2 id="1-4-分代收集算法-Generational-Collection"><a href="#1-4-分代收集算法-Generational-Collection" class="headerlink" title="1.4 分代收集算法(Generational Collection)"></a>1.4 分代收集算法(Generational Collection)</h2><p>既然上面说集中算法都各有优劣,那么根据他们各自的优点，在不同的情况下使用最优的算法会不会更好呢？</p>
+<p>分代收集的大致思路就是这样的:</p>
+<ul>
+<li>将JVM堆内存分为新生代和年老代</li>
+<li>年老代中的对象存活率一般都很高，采用’标记/清理’或’标记/复制’算法</li>
+<li>新生代中一般对象的’死亡率’都很高，采用复制算法</li>
+</ul>
+<h1 id="2-GC的代价——Stop-The-World"><a href="#2-GC的代价——Stop-The-World" class="headerlink" title="2 GC的代价——Stop The World"></a>2 GC的代价——Stop The World</h1><p>上面说了一大堆GC的理论。但是忽略了一点：</p>
+<p><strong>怎么确定哪些对象或内存区域是可以被回收的呢？？？</strong></p>
+<p>在java中对于对象是否还“活着”，采用的不是像Python或者其他语言中的”引用计数”的方法。<br>java中采用的是”可达性分析”。<br>至于可达性分析的细节没必要去深究，但是由”判断对象是否还存活？”引出的另一个问题却不得不考虑，看下文。</p>
+<p>无论采用什么方法去区分哪些对象还活着，不得不做的一个让步就是：这个判定过程中必须暂时让其他所有的线程都暂时停顿，这个现象对于JVM中的各个对象来说就相当于整个世界停止了。也就是所谓的<code>Stop The World</code>。</p>
+<p>这个停顿当然是有必要的，比如你开始分析对象的存活状态时一个对象是无用的，当你分析完成后那个对象却让其他线程操作了变成有效对象了。</p>
+<p>所以，在整个判断过程中，要能够确保一致性。也就免不了<code>Stop The World</code>。</p>
+<p>当然，应用的规模越大，<code>Stop The World</code>带来的影响越大。<br>所以，频繁的GC也不见得是好事。</p>
+<h1 id="3-垃圾收集器"><a href="#3-垃圾收集器" class="headerlink" title="3 垃圾收集器"></a>3 垃圾收集器</h1><p>上面说的都是GC的大致理论知识，现在看看GC的实现：垃圾收集器。</p>
+<h2 id="3-1-Serial收集器"><a href="#3-1-Serial收集器" class="headerlink" title="3.1 Serial收集器"></a>3.1 Serial收集器</h2><p>Serial收集器是众多垃圾收集器中的元老。是一个单线程的收集器。在它进行垃圾收集时，必须暂停其他所有的工作线程，直到它收集结束(Stop The World)。<br>虽然它的出现非常早，但是它依然是虚拟机运行在Client模式下的默认<code>新生代收集器</code>,也有其独特的优点:</p>
+<ul>
+<li>简单而高效（与其他收集器的单线程比）</li>
+<li>对于限定单个CPU的环境来说，Serial收集器由于没有线程交互的开销</li>
+</ul>
+<h2 id="3-2-ParNew收集器"><a href="#3-2-ParNew收集器" class="headerlink" title="3.2 ParNew收集器"></a>3.2 ParNew收集器</h2><blockquote>
+<p>这个ParNew的介绍是来自《深入理解JVM》的作者说的，与本人没任何关系 ^<em>^ .. ^</em>^</p>
+</blockquote>
+<p>ParNew收集器其实就是Serial收集器的多线程版本，除了使用多条线程进行垃圾收集之外，其余行为包括Serial收集器可用的所有控制参数（例如：-XX：SurvivorRatio、 -XX：PretenureSizeThreshold、 -XX：HandlePromotionFailure等）、 收集算法、 Stop The World、 对象分配规则、 回收策略等都与Serial收集器完全一样，在实现上，这两种收集器也共用了相当多的代码。</p>
+<ul>
+<li>是许多运行在Server模式下的虚拟机中首选的新生代收集器，其中有一个与性能无关但很重要的原因是，除了Serial收集器外，目前只有它能与CMS收集器配合工作</li>
+<li>ParNew收集器在单CPU的环境中绝对不会有比Serial收集器更好的效果<ul>
+<li>甚至由于存在线程交互的开销，该收集器在通过超线程技术实现的两个CPU的环境中都不能百分之百地保证可以超越Serial收集器。 </li>
+<li>当然，随着可以使用的CPU的数量的增加，它对于GC时系统资源的有效利用还是很有好处的。 它默认开启的收集线程数与CPU的数量相同，在CPU非常多的环境下，可以使用-XX：ParallelGCThreads参数来限制垃圾收集的线程数</li>
+</ul>
+</li>
+</ul>
+<h2 id="3-3-Parallel-Scavenge收集器"><a href="#3-3-Parallel-Scavenge收集器" class="headerlink" title="3.3 Parallel Scavenge收集器"></a>3.3 Parallel Scavenge收集器</h2><h3 id="3-3-1-简介"><a href="#3-3-1-简介" class="headerlink" title="3.3.1 简介"></a>3.3.1 简介</h3><p>他的特点如下：</p>
+<ul>
+<li>是一个新生代收集器</li>
+<li>使用复制算法的收集器</li>
+<li>并行的多线程收集器</li>
+<li>Parallel Scavenge收集器的目标则是达到一个可控制的吞吐量<ul>
+<li>吞吐量=运行用户代码时间/(运行用户代码时间+垃圾收集时间)</li>
+<li>也经常称为“吞吐量优先”收集器</li>
+</ul>
+</li>
+</ul>
+<h3 id="3-3-2-参数"><a href="#3-3-2-参数" class="headerlink" title="3.3.2 参数"></a>3.3.2 参数</h3><ul>
+<li>-XX:MaxGCPauseMillis ==&gt; 控制最大垃圾收集停顿时间,大于零的毫秒数</li>
+<li>-XX:GCTimeRatio ==&gt; 直接设置吞吐量大小,吞吐量的倒数，既然是个比率，也就是个0到100的整数</li>
+<li>-XX:+UseAdaptiveSizePolicy<ul>
+<li>是一个开关参数，当这个参数打开之后，就不需要手工指定新生代的大小（-Xmn）、Eden与Survivor区的比例（-XX：SurvivorRatio）、 晋升老年代对象年龄（-XX：PretenureSizeThreshold）等细节参数了.</li>
+<li>虚拟机会根据当前系统的运行情况收集性能监控信息，动态调整这些参数以提供最合适的停顿时间或者最大的吞吐量，这种调节方式称为GC自适应的调节策略（GC Ergonomics）</li>
+</ul>
+</li>
+</ul>
+<h2 id="3-4-Serial-Old收集器"><a href="#3-4-Serial-Old收集器" class="headerlink" title="3.4 Serial Old收集器"></a>3.4 Serial Old收集器</h2><ul>
+<li>Serial收集器的老年代版本</li>
+<li>一个单线程收集器</li>
+<li>使用“标记-整理”算法</li>
+</ul>
+<h2 id="3-5-Parallel-Old收集器"><a href="#3-5-Parallel-Old收集器" class="headerlink" title="3.5 Parallel Old收集器"></a>3.5 Parallel Old收集器</h2><ul>
+<li>是Parallel Scavenge收集器的老年代版本</li>
+<li>使用多线程和“标记-整理”算法</li>
+</ul>
+<h2 id="3-6-CMS收集器"><a href="#3-6-CMS收集器" class="headerlink" title="3.6 CMS收集器"></a>3.6 CMS收集器</h2><ul>
+<li>CMS:Concurrent Mark Sweep</li>
+<li>是一种以获取最短回收停顿时间为目标的收集器<ul>
+<li>此处的停顿指的就是上文提到的”Stop The World”</li>
+</ul>
+</li>
+<li>其名称中的MS指的就是Mark Sweep，它采用的算法就是标记/清除</li>
+<li>他有另外一个名字就是：Concurrent Low Pause Collector(并发、低停顿)</li>
+</ul>
+<p>他的缺点如下：</p>
+<ul>
+<li>对CPU资源非常敏感<ul>
+<li>它虽然不会导致用户线程停顿，但是会因为占用了一部分线程而导致应用程序变慢，总吞吐量会降低</li>
+</ul>
+</li>
+<li>无法处理浮动垃圾</li>
+<li>标记/清除——-&gt;内存不连续</li>
+</ul>
+<h2 id="3-7-G1收集器"><a href="#3-7-G1收集器" class="headerlink" title="3.7 G1收集器"></a>3.7 G1收集器</h2><ul>
+<li>是一款面向服务端应用的垃圾收集器</li>
+<li>并行与并发<ul>
+<li>G1能充分利用多CPU、 多核环境下的硬件优势，使用多个CPU（CPU或者CPU核心）来缩短Stop-The-World停顿的时间，部分其他收集器原本需要停顿Java线程执行的GC动作，G1收集器仍然可以通过并发的方式让Java程序继续执行</li>
+</ul>
+</li>
+<li>分代收集</li>
+<li>空间整合<ul>
+<li>不会产生内存空间碎片,收集后能提供规整的可用内存</li>
+<li>分配大对象时不会因为无法找到连续内存空间而提前触发下次GC</li>
+</ul>
+</li>
+<li>可预测的停顿:低停顿</li>
+</ul>
+<blockquote>
+<p>《深入理解JVM》一书是这么说的:</p>
+</blockquote>
+<p>在G1之前的其他收集器进行收集的范围都是整个新生代或者老年代，而G1不再是这样。 使用G1收集器时，Java堆的内存布局就与其他收集器有很大差别，它将整个Java堆划分为多个大小相等的独立区域（Region），虽然还保留有新生代和老年代的概念，但新生代和老年代不再是物理隔离的了，它们都是一部分Region（不需要连续）的集合。</p>
+<h1 id="4-GC日志"><a href="#4-GC日志" class="headerlink" title="4 GC日志"></a>4 GC日志</h1><p>GC日志的格式乍看起来乱七八糟，乌漆嘛黑的。当然他肯定是有格式的。就拿《深入理解JVM》中的这段代码来说吧：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ReferenceCountingGC</span> </span>&#123;</div><div class="line">	<span class="keyword">public</span> Object instance = <span class="keyword">null</span>;</div><div class="line">	<span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> _1MB = <span class="number">1024</span> * <span class="number">1024</span>;</div><div class="line">	<span class="comment">/**</span></div><div class="line"><span class="comment">	 * 这个成员属性的唯一意义就是占点内存，以便能在GC日志中看清楚是否被回收过</span></div><div class="line"><span class="comment">	 */</span></div><div class="line">	<span class="keyword">byte</span>[] bigSize = <span class="keyword">new</span> <span class="keyword">byte</span>[<span class="number">2</span> * _1MB];</div><div class="line"></div><div class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</div><div class="line">		ReferenceCountingGC objA = <span class="keyword">new</span> ReferenceCountingGC();</div><div class="line">		ReferenceCountingGC objB = <span class="keyword">new</span> ReferenceCountingGC();</div><div class="line">		objA.instance = objB;</div><div class="line">		objB.instance = objA;</div><div class="line">		objA = <span class="keyword">null</span>;</div><div class="line">		objB = <span class="keyword">null</span>;</div><div class="line">		<span class="comment">// 假设在这行发生GC,objA和objB是否能被回收？</span></div><div class="line">		System.gc();</div><div class="line">	&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>虚拟机参数:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">-XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps</div></pre></td></tr></table></figure>
+<p>在我的机器(jdk1.7)上输出如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">2016-12-17T16:11:19.650+0800: 0.093: [GC [PSYoungGen: 5427K-&gt;568K(38400K)] 5427K-&gt;568K(124416K), 0.0016819 secs] [Times: user=0.00 sys=0.00, real=0.00 secs] </div><div class="line">2016-12-17T16:11:19.652+0800: 0.095: [Full GC [PSYoungGen: 568K-&gt;0K(38400K)] [ParOldGen: 0K-&gt;463K(86016K)] 568K-&gt;463K(124416K) [PSPermGen: 2514K-&gt;2513K(21504K)], 0.0109008 secs] [Times: user=0.02 sys=0.00, real=0.01 secs] </div><div class="line">Heap</div><div class="line"> PSYoungGen      total 38400K, used 998K [0x00000007d5c80000, 0x00000007d8700000, 0x0000000800000000)</div><div class="line">  eden space 33280K, 3% used [0x00000007d5c80000,0x00000007d5d79a60,0x00000007d7d00000)</div><div class="line">  from space 5120K, 0% used [0x00000007d7d00000,0x00000007d7d00000,0x00000007d8200000)</div><div class="line">  to   space 5120K, 0% used [0x00000007d8200000,0x00000007d8200000,0x00000007d8700000)</div><div class="line"> ParOldGen       total 86016K, used 463K [0x0000000781600000, 0x0000000786a00000, 0x00000007d5c80000)</div><div class="line">  object space 86016K, 0% used [0x0000000781600000,0x0000000781673eb0,0x0000000786a00000)</div><div class="line"> PSPermGen       total 21504K, used 2520K [0x000000077c400000, 0x000000077d900000, 0x0000000781600000)</div><div class="line">  object space 21504K, 11% used [0x000000077c400000,0x000000077c676178,0x000000077d900000)</div></pre></td></tr></table></figure>
+<p>解释如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">2016-12-17T16:11:19.650+0800</div><div class="line">	-XX:+PrintGCDateStamps的作用,就是GC的时间了</div><div class="line">0.093:表示的从JVM启动以来经过的秒数</div><div class="line">GC [PSYoungGen:....</div><div class="line">	GC发生的区域</div><div class="line">		PSYoungGen表示采用的收集器为Parallel Scavenge</div><div class="line">		如果使用的是Serial收集器，新生代名为“Default New Generation”，显示就是“[DefNew”</div><div class="line">		如果使用的是ParNew收集器，新生代名称为“[ParNew”，意为“Parallel New Generation”</div><div class="line">		如果采用的是Parallel Scavenge收集器，新生代名称就是“PSYoungGen”</div><div class="line">“Full”，说明这次GC是发生了Stop-The-World</div></pre></td></tr></table></figure>
+<p>GC日志，暂时就先写这么多吧，在后续的文章中再详细介绍GC日志。</p>
+<h1 id="5-和GC相关的JVM参数"><a href="#5-和GC相关的JVM参数" class="headerlink" title="5 和GC相关的JVM参数"></a>5 和GC相关的JVM参数</h1><p><strong>注:以下参数总结来自《深入理解JVM》一书</strong></p>
+<ul>
+<li>UseSerialGC : 是否使用Serial收集器<ul>
+<li>启用后将使用<code>Serial + Serial Old</code>的组合来进行垃圾回收</li>
+<li>这也是Client模式下的默认值</li>
+</ul>
+</li>
+<li>UseParNewGC : 是否使用ParNew收集器<ul>
+<li>将使用<code>ParNew + Serial Old</code>的组合来进行垃圾回收</li>
+</ul>
+</li>
+<li>UseConcMarkSweepGC<ul>
+<li>启用后将使用<code>ParNew + CMS + Serial Old</code>的组合来进行垃圾回收</li>
+<li>Serial Old 作为CMS的后备收集器(Concurrent Mode Failure)</li>
+</ul>
+</li>
+<li>UseParallelGC<ul>
+<li>使用<code>Parallel Scavenge + Serial Old</code>的组合来进行垃圾回收</li>
+<li>这也是Server模式下的默认值</li>
+</ul>
+</li>
+<li>UseParallelOldGC<ul>
+<li>使用 <code>Parallel Scavenge + Parallel Old</code>的组合来进行垃圾回收</li>
+</ul>
+</li>
+<li>SurvivorRatio<ul>
+<li>新生代中Eden和Survivor的比值</li>
+<li>默认为8,即:<code>Eden:Survivor=8:1</code></li>
+</ul>
+</li>
+<li>PretenureSizeThreshold<ul>
+<li>这个大小值，表示对象大小大于多少之后直接分配到老年代而不进入新生代</li>
+</ul>
+</li>
+<li>MaxTenuringThreshold<ul>
+<li>这个年龄值表示对象在经过多少次Minor GC之后就进入老年代</li>
+<li>每次Minor GC之后，对象的该属性值就加1</li>
+</ul>
+</li>
+<li>UseAdaptiveSizePolicy<ul>
+<li>动态调节堆中各个区域的大小和进入老年代的年龄</li>
+</ul>
+</li>
+<li>HandlePromotionFailure<ul>
+<li>是否允许分配担保失败</li>
+<li>担保失败指的是: 老年代的剩余空间大小无法容纳新生代中的Eden和Survivor的情况</li>
+</ul>
+</li>
+<li>ParallelGCThreads<ul>
+<li>并行GC的线程数</li>
+</ul>
+</li>
+<li>GCTimeRatio<ul>
+<li>GC时间占总时间的比例</li>
+<li>只有在使用Parallel Scavenge的情况下生效</li>
+<li>默认值：99</li>
+</ul>
+</li>
+<li>MaxGCPauseMillis<ul>
+<li>GC的最大停顿时间</li>
+<li>只有在使用Parallel Scavenge的情况下生效</li>
+</ul>
+</li>
+<li>CMSInitiatingOccupancyFraction<ul>
+<li>CMS收集器在老年代空间被占用多少后触发GC</li>
+<li>只对CMS收集器生效</li>
+<li>默认值：68%</li>
+</ul>
+</li>
+<li>UseCMSCompactAtFullCollection<ul>
+<li>CMS收集器在完成垃圾回收后是否进行内存碎片整理</li>
+<li>只对CMS收集器生效</li>
+</ul>
+</li>
+<li>CMSFullGCsBeforeCompaction<ul>
+<li>CMS经过多少次GC后再进行碎片整理</li>
+<li>也就是设置CMS收集器在进行N次垃圾收集后再进行一次碎片整理</li>
+<li>只对CMS收集器生效</li>
+</ul>
+</li>
+</ul>
+<h1 id="6-Minor-GC-和-Full-GC-Major-GC"><a href="#6-Minor-GC-和-Full-GC-Major-GC" class="headerlink" title="6 Minor GC 和 Full GC/Major GC"></a>6 Minor GC 和 Full GC/Major GC</h1><ul>
+<li>Minor GC指的是新生代的GC<ul>
+<li>Minor GC比较频繁</li>
+<li>速度也比较快</li>
+</ul>
+</li>
+<li>Full GC/Major GC指的是老年代的GC<ul>
+<li>Full GC的速度一般比Minor GC慢10倍左右</li>
+<li>Full GC的出现往往会有Minor GC的伴随</li>
+</ul>
+</li>
+</ul>
+<h1 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h1><ul>
+<li>《深入理解JVM》</li>
+<li>《Java虚拟机规范》-JDK1.7</li>
+</ul>
+</div><div class="tags"><a href="/tags/JVM/">JVM</a></div><div class="post-nav"><a href="/2017/03/15/常用yum源收集/" class="pre">常用yum源收集</a><a href="/2017/03/15/JVM系列-01-JVM内存模型/" class="next">JVM系列-01-JVM内存模型</a></div></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/99-problems-in-scala/">99-problems-in-scala</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-多线程/">Java-多线程</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JavaSE/">JavaSE</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/LeetCode/">LeetCode</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/NIO/">NIO</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/app-server/">app-server</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/docker/">docker</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/http-server/">http-server</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kafka/">kafka</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/logging/">logging</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/maven/">maven</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/other/">other</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/scala/">scala</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/spark/">spark</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/spring-cloud/">spring-cloud</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/zookeeper/">zookeeper</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/安全/">安全</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/排序/">排序</a><span class="category-list-count">1</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-star-o"> 标签</i></div><div class="tagcloud"><a href="/tags/mysql/" style="font-size: 15px;">mysql</a> <a href="/tags/JVM/" style="font-size: 15px;">JVM</a> <a href="/tags/NIO/" style="font-size: 15px;">NIO</a> <a href="/tags/LeetCode/" style="font-size: 15px;">LeetCode</a> <a href="/tags/docker/" style="font-size: 15px;">docker</a> <a href="/tags/git/" style="font-size: 15px;">git</a> <a href="/tags/apache-httpd/" style="font-size: 15px;">apache/httpd</a> <a href="/tags/lambda/" style="font-size: 15px;">lambda</a> <a href="/tags/bit/" style="font-size: 15px;">bit</a> <a href="/tags/keytool/" style="font-size: 15px;">keytool</a> <a href="/tags/非对称加密/" style="font-size: 15px;">非对称加密</a> <a href="/tags/kafka/" style="font-size: 15px;">kafka</a> <a href="/tags/jt-808/" style="font-size: 15px;">jt-808</a> <a href="/tags/linux/" style="font-size: 15px;">linux</a> <a href="/tags/logging/" style="font-size: 15px;">logging</a> <a href="/tags/scala/" style="font-size: 15px;">scala</a> <a href="/tags/redis/" style="font-size: 15px;">redis</a> <a href="/tags/安全/" style="font-size: 15px;">安全</a> <a href="/tags/spark/" style="font-size: 15px;">spark</a> <a href="/tags/spring-cloud/" style="font-size: 15px;">spring-cloud</a> <a href="/tags/ssh/" style="font-size: 15px;">ssh</a> <a href="/tags/tomcat/" style="font-size: 15px;">tomcat</a> <a href="/tags/zookeeper/" style="font-size: 15px;">zookeeper</a> <a href="/tags/maven/" style="font-size: 15px;">maven</a> <a href="/tags/排序/" style="font-size: 15px;">排序</a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/java多线程-01-基本概念/">java多线程-01-基本概念</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/排序算法-01-冒泡排序/">排序算法-01-冒泡排序排序算法-01-冒泡排序</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/git-01-简介、安装和配置/">git-01-简介、安装和配置</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/git-02-基本操作/">git-02-基本操作</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/git-03-分支/">git-03-分支</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/shiro-常用filter/">shiro-常用filter</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/problem01-05/">problem01-05</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/java秘钥、证书管理工具-keytool/">java秘钥、证书管理工具-keytool</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/docker筑基篇-00-docker简介/">docker筑基篇-00-docker简介</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/httpd系列-00-安装/">httpd系列-00-安装</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-external-link"> 友情链接</i></div><ul></ul><a href="http://www.example1.com/" title="site-name1" target="_blank">site-name1</a><ul></ul><a href="http://www.example2.com/" title="site-name2" target="_blank">site-name2</a><ul></ul><a href="http://www.example3.com/" title="site-name3" target="_blank">site-name3</a></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2017 <a href="/." rel="nofollow">宛丘.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a id="rocket" href="#top" class="show"></a><script type="text/javascript" src="/js/totop.js?v=0.0.0" async></script><script type="text/javascript" src="//cdn.bootcss.com/fancybox/3.1.20/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=0.0.0" async></script><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/fancybox/3.1.20/jquery.fancybox.min.css"><script type="text/javascript" src="/js/codeblock-resizer.js?v=0.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=0.0.0"></script></div></body></html>

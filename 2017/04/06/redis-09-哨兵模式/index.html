@@ -1,0 +1,150 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description"><title>redis-09-哨兵模式 | 宛丘</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=0.0.0"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/normalize/7.0.0/normalize.min.css"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/pure/1.0.0/pure-min.css"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/pure/1.0.0/grids-responsive-min.css"><link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css"><script type="text/javascript" src="//cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script><link rel="Shortcut Icon" type="image/x-icon" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">redis-09-哨兵模式</h1><a id="logo" href="/.">宛丘</a><p class="description"></p></div><div id="nav-menu"><a href="/." class="current"><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div id="layout" class="pure-g"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">redis-09-哨兵模式</h1><div class="post-meta">Apr 6, 2017<span> | </span><span class="category"><a href="/categories/redis/">redis</a></span></div><div class="post-content"><h1 id="1-哨兵模式能做什么？"><a href="#1-哨兵模式能做什么？" class="headerlink" title="1 哨兵模式能做什么？"></a>1 哨兵模式能做什么？</h1><p>在上一篇文章中介绍的redis主从复制(<a href="http://blog.csdn.net/hylexus/article/details/69360701)虽然可以达到主从复制的目的。" target="_blank" rel="external">http://blog.csdn.net/hylexus/article/details/69360701)虽然可以达到主从复制的目的。</a></p>
+<p>但是并没有考虑高可用，也就是说：当主机宕机后，备机不能<code>及时自动顶替主机</code>，这当然不行的。</p>
+<p>这里介绍的redis的哨兵模式能够在后台监控主机是否发生故障，如果发生故障了，可以及时根据投票数自动将从库转换为主库。从而在<code>一定意义上达到高可用</code>。</p>
+<h1 id="2-哨兵模式相关的知识点"><a href="#2-哨兵模式相关的知识点" class="headerlink" title="2 哨兵模式相关的知识点"></a>2 哨兵模式相关的知识点</h1><h2 id="2-1-哨兵提供的功能"><a href="#2-1-哨兵提供的功能" class="headerlink" title="2.1 哨兵提供的功能"></a>2.1 哨兵提供的功能</h2><ul>
+<li>监控(monitoring)<ul>
+<li>定期检查监控的master和slave的状态</li>
+</ul>
+</li>
+<li>通知(notification)<ul>
+<li>当检测到故障时可以发送通知</li>
+</ul>
+</li>
+<li>自动故障转移(auto-failover)<ul>
+<li>检测到master不能工作时,可以将master的下属slave中的一个升级为master</li>
+<li>客户端连接已经不可用的master时,想客户端返回新的master地址</li>
+</ul>
+</li>
+<li>自动发现其他sentinel和从服务器<ul>
+<li>Sentinel 可以通过<code>发布与订阅功</code>能来<code>自动发现</code>正在监视相同主服务器的其他 Sentinel </li>
+<li>Sentinel 可以通过询问主服务器来获得<code>所有从服务器的信息</code></li>
+</ul>
+</li>
+<li>sentinel配置自动持久化<ul>
+<li>当 Sentinel 接收到一个新的配置， 或者当领头 Sentinel 为主服务器创建一个新的配置时， 这个配置会与配置纪元一起被保存到磁盘里面</li>
+<li>停止和重启 Sentinel 进程都是安全的</li>
+</ul>
+</li>
+</ul>
+<h2 id="2-2-主观下线和客观下线"><a href="#2-2-主观下线和客观下线" class="headerlink" title="2.2 主观下线和客观下线"></a>2.2 主观下线和客观下线</h2><p>sentinel会<code>定时</code>向其所监控的服务器发送<code>ping命令</code>以询问服务器是否还<code>正常地活着</code>.</p>
+<p>如果服务器的回应是有效回复,则认为该服务器<code>还正常地活着</code>.有效回复有以下三类:</p>
+<ul>
+<li>返回<code>+PONG</code></li>
+<li>返回<code>-LOADING</code></li>
+<li>返回<code>-MASTERDOWN</code></li>
+</ul>
+<p>换言之:如果服务器的回应不是以上三种之一，<code>或者</code>在指定的时间内没有回复，都将被认为是无效的回复.</p>
+<blockquote>
+<p>  另外需要注意的是：</p>
+</blockquote>
+<p>如果 <code>master-down-after-milliseconds</code> 选项的值为 <code>60000 ms</code>（<code>60 s</code>）， 那么即使服务器在第<code>59 s</code>时返回至少一次有效回复， 这个服务器就仍然会被认为是处于正常状态的。</p>
+<blockquote>
+<p>  主观下线和客观下线</p>
+</blockquote>
+<ul>
+<li>主观下线(Subjectively Down==sdown)：单个 Sentinel 实例对服务器做出的下线判断</li>
+<li>客观下线(Objectively Down==odown)：多个 Sentinel 实例都对某服务器得出<code>sdown</code>的判断</li>
+</ul>
+<h2 id="2-3-哨兵配置文件"><a href="#2-3-哨兵配置文件" class="headerlink" title="2.3 哨兵配置文件"></a>2.3 哨兵配置文件</h2><blockquote>
+<p>  配置文件中的选项</p>
+</blockquote>
+<ul>
+<li>down-after-milliseconds : 多少<code>毫秒内</code>得不到服务器的回应时sentinel可以认为该服务器已经下线</li>
+<li>parallel-syncs : 在完成故障转移时最多可以有几个slave从新的master同步数据</li>
+<li>myid ：sentinel自身的ID,和zookeeper集群中的myid类似</li>
+<li>port ：指定sentinel的端口(默认是redis示例端口前加个2比如26379)</li>
+</ul>
+<blockquote>
+<p>  一点说明</p>
+</blockquote>
+<p>其实你可以指定一个最小化的配置,其他的配置项redis会帮你生成。</p>
+<p>比如，你可以只指定<code>sentinel monitor &lt;name&gt; &lt;host&gt; &lt;port&gt; &lt;count&gt;</code>.其他项都会自动生成.</p>
+<p>当然，你最好将保护模式关闭。</p>
+<blockquote>
+<p>  配置文件示例</p>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span><span class="bash"> 哨兵自己的id,和zookeeper中的myid类似</span></div><div class="line">sentinel myid 37a94ac96520c311ca2976d56e716e3bbb4e9111</div><div class="line"><span class="meta">#</span><span class="bash"> 关闭保护模式(和redis.conf中的配置类似)</span></div><div class="line">protected-mode no</div><div class="line"><span class="meta">#</span><span class="bash"> 监控名为master-test的集群</span></div><div class="line">sentinel monitor master-test 192.168.1.131 6379 2</div><div class="line"><span class="meta">#</span><span class="bash"> 多少毫秒内sentinel可以认为他监控的对象已经断线</span></div><div class="line">sentinel down-after-milliseconds master-test 10000</div><div class="line"><span class="meta">#</span><span class="bash"> 故障转移的超时时间</span></div><div class="line">sentinel failover-timeout master-test 10000</div></pre></td></tr></table></figure>
+<h2 id="2-4-故障转移过程"><a href="#2-4-故障转移过程" class="headerlink" title="2.4 故障转移过程"></a>2.4 故障转移过程</h2><ul>
+<li>检测到<code>master</code>已经进入<code>sdown</code>(客观下线)状态</li>
+<li>对<code>当前纪元</code>进行自增，并尝试成为<code>leader-sentinel</code><ul>
+<li>没能成为<code>leader-sentinel</code><ul>
+<li>在设定的<code>failover-timeout</code>的两倍之后， 重新尝试</li>
+</ul>
+</li>
+<li>成功成为<code>leader-sentinel</code><ul>
+<li>选出一个<code>slave</code>，并升级为<code>master</code></li>
+<li>通过发布与订阅功能， 将更新后的配置传播给所有其他 Sentinel ， 其他 Sentinel 对它们自己的配置进行更新</li>
+<li>向已下线主服务器的从服务器发送 <code>SLAVEOF</code> 命令， 让它们去复制新的主服务器</li>
+<li>当所有从服务器都已经开始复制新的主服务器时, <code>leader-sentinel</code> 终止这次故障转移操作</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h1 id="3-配置示例"><a href="#3-配置示例" class="headerlink" title="3 配置示例"></a>3 配置示例</h1><h2 id="3-1-说明"><a href="#3-1-说明" class="headerlink" title="3.1 说明"></a>3.1 说明</h2><p><img src="http://img.blog.csdn.net/20170409174132417?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvaHlsZXh1cw==/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast" alt="sentinel-preview"></p>
+<ul>
+<li>为方便操作此处用主机名代替IP操作</li>
+<li>整个结构还是上一篇文章中的一主二从</li>
+<li>三个redis分别位于三台主机上</li>
+</ul>
+<h2 id="3-2-配置"><a href="#3-2-配置" class="headerlink" title="3.2 配置"></a>3.2 配置</h2><ul>
+<li>哨兵配置文件(三台主机是一致的)</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">sentinel monitor master-test h1 6379 2</div><div class="line">protected-mode no</div><div class="line"><span class="meta">#</span><span class="bash"> 以下两项不是必须的(此处只是为了较快的看到变化才缩短了时间配置)</span></div><div class="line">sentinel down-after-milliseconds master-test 10000</div><div class="line">sentinel failover-timeout master-test 10000</div></pre></td></tr></table></figure>
+<h2 id="3-3-启动"><a href="#3-3-启动" class="headerlink" title="3.3 启动"></a>3.3 启动</h2><ul>
+<li>启动redis实例</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span><span class="bash"> 启动master</span></div><div class="line">[root@h1 redis]$ redis-server redis.conf </div><div class="line"><span class="meta">#</span><span class="bash"> 启动slave h1</span></div><div class="line">[root@h2 redis]$ redis-server redis.conf --slaveof h1 6379</div><div class="line"><span class="meta">#</span><span class="bash"> 启动slave h2</span></div><div class="line">[root@h3 redis]$ redis-server redis.conf --slaveof h1 6379</div></pre></td></tr></table></figure>
+<ul>
+<li>启动sentinel实例(三台机器一样的命令)</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">[root@h1 redis]$ redis-sentinel sentinel.conf</div></pre></td></tr></table></figure>
+<blockquote>
+<p>  此时可以看看redis自动生成的哨兵配置文件内容:</p>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">[root@h1 redis]$ cat sentinel.conf</div><div class="line">port 26379</div><div class="line">sentinel myid 37a94ac96520c311ca2976d56e716e3bbb4e9111</div><div class="line">protected-mode no</div><div class="line"><span class="meta">#</span><span class="bash"> Generated by CONFIG REWRITE</span></div><div class="line">dir "/data/redis"</div><div class="line">sentinel monitor master-test 192.168.1.131 6379 2</div><div class="line">sentinel down-after-milliseconds master-test 10000</div><div class="line">sentinel failover-timeout master-test 10000</div><div class="line">sentinel config-epoch master-test 4</div><div class="line">sentinel leader-epoch master-test 4</div><div class="line">sentinel known-slave master-test 192.168.1.132 6379</div><div class="line">sentinel known-slave master-test 192.168.1.133 6379</div><div class="line">sentinel known-sentinel master-test 192.168.1.132 26379 ac72dd0def3cf1ee47bab9dba9d4454693a2c222</div><div class="line">sentinel known-sentinel master-test 192.168.1.133 26379 3dcc2ef2b3aff48d61afb0ae041ce08e59e4b333</div><div class="line">sentinel current-epoch 4</div></pre></td></tr></table></figure>
+<ul>
+<li>sentinel的日志输出</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span><span class="bash"> 当前sentinel的ID</span></div><div class="line">Sentinel ID is 37a94ac96520c311ca2976d56e716e3bbb4e9111</div><div class="line"><span class="meta">#</span><span class="bash"> 当前监控的master</span></div><div class="line">+monitor master master-test 192.168.1.133 6379 quorum 2</div><div class="line"><span class="meta">#</span><span class="bash"> 检测到了其他的sentinel</span></div><div class="line">+sentinel sentinel ac72dd0def3cf1ee47bab9dba9d4454693a2c222 192.168.1.132 26379 @ master-test 192.168.1.133 6379</div><div class="line"><span class="meta">#</span><span class="bash"> 检测到了其他的sentinel</span></div><div class="line">+sentinel sentinel 3dcc2ef2b3aff48d61afb0ae041ce08e59e4b333 192.168.1.133 26379 @ master-test 192.168.1.133 6379</div><div class="line"><span class="meta">#</span><span class="bash"> 检测到的master的下属slave</span></div><div class="line">+slave slave 192.168.1.132:6379 192.168.1.132 6379 @ master-test 192.168.1.131 6379</div><div class="line">+slave slave 192.168.1.133:6379 192.168.1.133 6379 @ master-test 192.168.1.131 6379</div></pre></td></tr></table></figure>
+<h2 id="3-4-测试"><a href="#3-4-测试" class="headerlink" title="3.4 测试"></a>3.4 测试</h2><ul>
+<li>手动停止主机h1</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">[root@h1 redis]$ redis-cli shutdown</div></pre></td></tr></table></figure>
+<p>此时看看h1上哨兵的日志输出：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"># h1主观下线</div><div class="line">+sdown master master-test 192.168.1.131 6379</div><div class="line"># h1客观下线</div><div class="line">+odown master master-test 192.168.1.131 6379 #quorum 3/2</div><div class="line"># 开始尝试故障转移</div><div class="line">+try-failover master master-test 192.168.1.131 6379</div><div class="line">………………</div><div class="line"># 最终将h2选为新的master</div><div class="line">+switch-master master-test 192.168.1.131 6379 192.168.1.132 6379</div></pre></td></tr></table></figure>
+<ul>
+<li>再次启动h1</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">[root@h1 redis]$ redis-server redis.conf</div></pre></td></tr></table></figure>
+<p>此时可以看到类似如下输出:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span><span class="bash"> h1的主观下线状态被取消</span></div><div class="line">-sdown slave 192.168.1.131:6379 192.168.1.131 6379 @ master-test 192.168.1.132 6379</div><div class="line"><span class="meta">#</span><span class="bash"> 原来的master(h1)回来后被转成了当前master(h2)的slave</span></div><div class="line">+convert-to-slave slave 192.168.1.131:6379 192.168.1.131 6379 @ master-test 192.168.1.132 6379</div></pre></td></tr></table></figure>
+<ul>
+<li>同时还有一点更牛逼的是：</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span><span class="bash"> 此时查看h1上redis的配置文件中关于slave的配置已经被自动修改了</span></div><div class="line">[root@h1 redis]$ cat redis.conf | grep slaveof</div><div class="line"><span class="meta">#</span><span class="bash"> Master-Slave replication. Use slaveof to make a Redis instance a copy of</span></div><div class="line"><span class="meta">#</span><span class="bash"> slaveof &lt;masterip&gt; &lt;masterport&gt;</span></div><div class="line"><span class="meta">#</span><span class="bash"> slaveof h1 6379</span></div><div class="line">slaveof 192.168.1.132 6379 # *****这个是自动修改过的****</div><div class="line">[root@h1 redis]$  </div><div class="line"></div><div class="line"><span class="meta">#</span><span class="bash"> h3的配置文件也被修改过了</span></div><div class="line">[root@h3 redis]$ cat redis.conf | grep slaveof</div><div class="line"><span class="meta">#</span><span class="bash"> Master-Slave replication. Use slaveof to make a Redis instance a copy of</span></div><div class="line"><span class="meta">#</span><span class="bash"> slaveof &lt;masterip&gt; &lt;masterport&gt;</span></div><div class="line">slaveof 192.168.1.132 6379</div><div class="line">[root@h3 redis]$</div></pre></td></tr></table></figure>
+<h2 id="3-5-sentinel日志输出"><a href="#3-5-sentinel日志输出" class="headerlink" title="3.5 sentinel日志输出"></a>3.5 sentinel日志输出</h2><p>以下内容来自:<a href="http://www.redis.cn/topics/sentinel.html" target="_blank" rel="external">http://www.redis.cn/topics/sentinel.html</a></p>
+<ul>
+<li>+reset-master ：主服务器已被重置</li>
+<li>+slave ：一个新的从服务器已经被 Sentinel 识别并关联。</li>
+<li>+failover-state-reconf-slaves ：故障转移状态切换到了 reconf-slaves 状态。</li>
+<li>+failover-state-select-slave ：故障转移操作现在处于 select-slave 状态 —— Sentinel 正在寻找可以升级为主服务器的从服务器。</li>
+<li>failover-state-send-slaveof-noone ：Sentinel 正在将指定的从服务器升级为主服务器，等待升级功能完成。</li>
+<li>failover-end-for-timeout ：故障转移因为超时而中止</li>
+<li>failover-end ：故障转移操作顺利完成。所有从服务器都开始复制新的主服务器了</li>
+<li>no-good-slave ：Sentinel 操作未能找到适合进行升级的从服务器。Sentinel 会在一段时间之后再次尝试寻找合适的从服务器来进行升级，又或者直接放弃执行故障转移操作。</li>
+<li>+sentinel ：一个监视给定主服务器的新 Sentinel 已经被识别并添加。</li>
+<li>+sdown ：给定的实例现在处于主观下线状态。</li>
+<li>-sdown ：给定的实例已经不再处于主观下线状态。</li>
+<li>+odown ：给定的实例现在处于客观下线状态。</li>
+<li>-odown ：给定的实例已经不再处于客观下线状态。</li>
+</ul>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>主从复制+哨兵可以解决高可用和部分高性能。</p>
+<p>之所以说是部分高性能是因为主从复制可以提供读的性能，但是写操作依然是单点master负责。</p>
+<p>后续的有关redis集群的文章将介绍这方面的内容。</p>
+<h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><ul>
+<li><a href="http://www.redis.cn/topics/sentinel.html" target="_blank" rel="external">http://www.redis.cn/topics/sentinel.html</a></li>
+<li><a href="https://redis.io/documentation" target="_blank" rel="external">https://redis.io/documentation</a></li>
+<li>尚硅谷思维导图</li>
+</ul>
+</div><div class="tags"><a href="/tags/redis/">redis</a></div><div class="post-nav"><a href="/2017/04/09/kafka-02-集群搭建/" class="pre">kafka-02-集群搭建</a><a href="/2017/04/03/mysql修改密码的几种方式/" class="next"></a></div></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/99-problems-in-scala/">99-problems-in-scala</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-多线程/">Java-多线程</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JavaSE/">JavaSE</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/LeetCode/">LeetCode</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/NIO/">NIO</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/app-server/">app-server</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/docker/">docker</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/http-server/">http-server</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kafka/">kafka</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/logging/">logging</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/maven/">maven</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/other/">other</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/scala/">scala</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/spark/">spark</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/spring-cloud/">spring-cloud</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/zookeeper/">zookeeper</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/安全/">安全</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/排序/">排序</a><span class="category-list-count">1</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-star-o"> 标签</i></div><div class="tagcloud"><a href="/tags/mysql/" style="font-size: 15px;">mysql</a> <a href="/tags/JVM/" style="font-size: 15px;">JVM</a> <a href="/tags/NIO/" style="font-size: 15px;">NIO</a> <a href="/tags/LeetCode/" style="font-size: 15px;">LeetCode</a> <a href="/tags/docker/" style="font-size: 15px;">docker</a> <a href="/tags/git/" style="font-size: 15px;">git</a> <a href="/tags/apache-httpd/" style="font-size: 15px;">apache/httpd</a> <a href="/tags/lambda/" style="font-size: 15px;">lambda</a> <a href="/tags/bit/" style="font-size: 15px;">bit</a> <a href="/tags/keytool/" style="font-size: 15px;">keytool</a> <a href="/tags/非对称加密/" style="font-size: 15px;">非对称加密</a> <a href="/tags/kafka/" style="font-size: 15px;">kafka</a> <a href="/tags/jt-808/" style="font-size: 15px;">jt-808</a> <a href="/tags/linux/" style="font-size: 15px;">linux</a> <a href="/tags/logging/" style="font-size: 15px;">logging</a> <a href="/tags/scala/" style="font-size: 15px;">scala</a> <a href="/tags/redis/" style="font-size: 15px;">redis</a> <a href="/tags/安全/" style="font-size: 15px;">安全</a> <a href="/tags/spark/" style="font-size: 15px;">spark</a> <a href="/tags/spring-cloud/" style="font-size: 15px;">spring-cloud</a> <a href="/tags/ssh/" style="font-size: 15px;">ssh</a> <a href="/tags/tomcat/" style="font-size: 15px;">tomcat</a> <a href="/tags/zookeeper/" style="font-size: 15px;">zookeeper</a> <a href="/tags/maven/" style="font-size: 15px;">maven</a> <a href="/tags/排序/" style="font-size: 15px;">排序</a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/java多线程-01-基本概念/">java多线程-01-基本概念</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/排序算法-01-冒泡排序/">排序算法-01-冒泡排序排序算法-01-冒泡排序</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/git-01-简介、安装和配置/">git-01-简介、安装和配置</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/git-02-基本操作/">git-02-基本操作</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/git-03-分支/">git-03-分支</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/shiro-常用filter/">shiro-常用filter</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/problem01-05/">problem01-05</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/java秘钥、证书管理工具-keytool/">java秘钥、证书管理工具-keytool</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/docker筑基篇-00-docker简介/">docker筑基篇-00-docker简介</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/httpd系列-00-安装/">httpd系列-00-安装</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-external-link"> 友情链接</i></div><ul></ul><a href="http://www.example1.com/" title="site-name1" target="_blank">site-name1</a><ul></ul><a href="http://www.example2.com/" title="site-name2" target="_blank">site-name2</a><ul></ul><a href="http://www.example3.com/" title="site-name3" target="_blank">site-name3</a></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2017 <a href="/." rel="nofollow">宛丘.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a id="rocket" href="#top" class="show"></a><script type="text/javascript" src="/js/totop.js?v=0.0.0" async></script><script type="text/javascript" src="//cdn.bootcss.com/fancybox/3.1.20/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=0.0.0" async></script><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/fancybox/3.1.20/jquery.fancybox.min.css"><script type="text/javascript" src="/js/codeblock-resizer.js?v=0.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=0.0.0"></script></div></body></html>
