@@ -1,0 +1,140 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description"><title>zookeeper-03-常用配置和四字命令 | 宛丘</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=0.0.0"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/normalize/7.0.0/normalize.min.css"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/pure/1.0.0/pure-min.css"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/pure/1.0.0/grids-responsive-min.css"><link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css"><script type="text/javascript" src="//cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script><link rel="Shortcut Icon" type="image/x-icon" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">zookeeper-03-常用配置和四字命令</h1><a id="logo" href="/.">宛丘</a><p class="description"></p></div><div id="nav-menu"><a href="/." class="current"><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/timeline/"><i class="fa fa-user"> timeline</i></a></div></div><div id="layout" class="pure-g"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">zookeeper-03-常用配置和四字命令</h1><div class="post-meta">Mar 15, 2017<span> | </span><span class="category"><a href="/categories/zookeeper/">zookeeper</a></span></div><a data-disqus-identifier="2017/03/15/zookeeper-03-常用配置和四字命令/" href="/2017/03/15/zookeeper-03-常用配置和四字命令/#disqus_thread" class="disqus-comment-count"></a><div class="post-content"><h1 id="1-默认配置文件示例"><a href="#1-默认配置文件示例" class="headerlink" title="1 默认配置文件示例"></a>1 默认配置文件示例</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div></pre></td><td class="code"><pre><div class="line"># 毫秒数,指定zookeeper中的最小时间单元大小</div><div class="line"># 许多属性都是该属性的N倍</div><div class="line">tickTime=2000</div><div class="line"></div><div class="line"># 此处的10,表示tickTime的10倍</div><div class="line">initLimit=10</div><div class="line"># The number of ticks that can pass between </div><div class="line"># sending a request and getting an acknowledgement</div><div class="line">syncLimit=5</div><div class="line"></div><div class="line"># 用于存储快照的目录</div><div class="line">dataDir=/var/zookeeper</div><div class="line"></div><div class="line"># 对外提供的服务端口,供客户端使用</div><div class="line">clientPort=2181</div><div class="line"></div><div class="line"># maxClientCnxns=60</div><div class="line">#</div><div class="line"># autopurge.snapRetainCount=3</div><div class="line"># autopurge.purgeInterval=1</div><div class="line"></div><div class="line">server.1=h1:2183:2184</div><div class="line">server.2=h2:2183:2184</div><div class="line">server.3=h3:2183:2184</div></pre></td></tr></table></figure>
+<h1 id="2-其他常用配置"><a href="#2-其他常用配置" class="headerlink" title="2 其他常用配置"></a>2 其他常用配置</h1><ul>
+<li>dataLogDir</li>
+</ul>
+<p>默认情况下,zookeeper的事务日志将会和快照文件存储于同一目录下.该属性指定事务日志文件的存放位置。<br>并且,官方推荐的做法是: 为事务日志准备专用的吞吐量较大的存储设备，同时也将事务日志和快照文件的存储分开了。</p>
+<ul>
+<li>globalOutstandingLimit (zookeeper.globalOutstandingLimit)</li>
+</ul>
+<p>当客户端请求到来的速度大于zookeeper处理请求的速度的时候(比如客户端数量较大时),新的请求会堆积。<br>太大的堆积会影响服务器的性能或者使zookeeper溢出。<br>该属性就是设置堆积的请求的最大数量的。默认为1000。</p>
+<ul>
+<li>preAllocSize (zookeeper.preAllocSize)</li>
+</ul>
+<p>事务日志文件预分配的大小.默认为64M。</p>
+<ul>
+<li>minSessionTimeout</li>
+</ul>
+<p>最小超时时间，默认为tickTime的2倍。</p>
+<ul>
+<li>maxSessionTimeout</li>
+</ul>
+<p>最大超时时间，默认为tickTime的20倍。</p>
+<ul>
+<li>autopurge.snapRetainCount</li>
+</ul>
+<p>启用后,将自动清理快照文件和日志文件。该属性指定在清理的时候保留几个快照文件和日志文件。该值的最小值为3.</p>
+<ul>
+<li>autopurge.purgeInterval</li>
+</ul>
+<p>定时清理日志和快照文件的时间间隔。0表示不清理。</p>
+<ul>
+<li>initLimit</li>
+</ul>
+<p>表示Leader等待Flower连接到Leader并和Leader同步数据的时间最大值。当数据量较大时应该适当调大该参数。<br>默认为10*tickTime。</p>
+<ul>
+<li>syncLimit</li>
+</ul>
+<p>Leader和Follower之间心跳检测的最大时间间隔。<br>如果超过该值配置的时间间隔没有收到Follower的心跳信号，则Leader认为Follower已经和自己断开连接。</p>
+<ul>
+<li>forceSync (zookeeper.forceSync)</li>
+</ul>
+<p>表示是否实时地将事务日志的内容写入磁盘(立即从缓存直接刷入磁盘)。<br>可取值为 yes|no</p>
+<ul>
+<li>skipACL (zookeeper.skipACL)</li>
+</ul>
+<p>对于客户端的请求是否跳过授权检测。默认为false。</p>
+<h1 id="3-常用四字命令"><a href="#3-常用四字命令" class="headerlink" title="3 常用四字命令"></a>3 常用四字命令</h1><p>zookeeper中，一些命令都是4个英文字母组成的，因此，有人称之为zookeeper “四字命令”。</p>
+<p>这些四字命令可以通过telnet或者nc来执行以获取zookeeper的一些信息。<br>以下stat命令的操作使用了两种方法来演示：</p>
+<ul>
+<li>stat</li>
+</ul>
+<p>查询zookeeper集群状态信息。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line">[root@h1 zookeeper]# telnet 192.168.161.128 2181</div><div class="line">Trying 192.168.161.128...</div><div class="line">Connected to 192.168.161.128.</div><div class="line">Escape character is &apos;^]&apos;.</div><div class="line">stat</div><div class="line">Zookeeper version: 3.4.9-1757313, built on 08/23/2016 06:50 GMT</div><div class="line">Clients:</div><div class="line"> /192.168.161.128:53253[0](queued=0,recved=1,sent=0)</div><div class="line"></div><div class="line">Latency min/avg/max: 0/0/0</div><div class="line">Received: 4</div><div class="line">Sent: 3</div><div class="line">Connections: 1</div><div class="line">Outstanding: 0</div><div class="line">Zxid: 0x500000001</div><div class="line">Mode: follower</div><div class="line">Node count: 18</div><div class="line">Connection closed by foreign host.</div><div class="line">[root@h1 zookeeper]#</div></pre></td></tr></table></figure>
+<p>或者：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line">[root@h1 zookeeper]# echo stat | nc 192.168.161.128 2181</div><div class="line">Zookeeper version: 3.4.9-1757313, built on 08/23/2016 06:50 GMT</div><div class="line">Clients:</div><div class="line"> /192.168.161.128:53254[0](queued=0,recved=1,sent=0)</div><div class="line"></div><div class="line">Latency min/avg/max: 0/0/0</div><div class="line">Received: 5</div><div class="line">Sent: 4</div><div class="line">Connections: 1</div><div class="line">Outstanding: 0</div><div class="line">Zxid: 0x500000001</div><div class="line">Mode: follower</div><div class="line">Node count: 18</div><div class="line">[root@h1 zookeeper]#</div></pre></td></tr></table></figure>
+<ul>
+<li>mntr</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">[root@h1 zookeeper]# echo mntr | nc 192.168.161.128 2181</div><div class="line">zk_version	3.4.9-1757313, built on 08/23/2016 06:50 GMT</div><div class="line">zk_avg_latency	0</div><div class="line">zk_max_latency	0</div><div class="line">zk_min_latency	0</div><div class="line">zk_packets_received	2</div><div class="line">zk_packets_sent	2</div><div class="line">zk_num_alive_connections	1</div><div class="line">zk_outstanding_requests	0</div><div class="line">zk_server_state	follower</div><div class="line">zk_znode_count	18</div><div class="line">zk_watch_count	0</div><div class="line">zk_ephemerals_count	0</div><div class="line">zk_approximate_data_size	561</div><div class="line">zk_open_file_descriptor_count	32</div><div class="line">zk_max_file_descriptor_count	4096</div></pre></td></tr></table></figure>
+<ul>
+<li>crst</li>
+</ul>
+<p>重置所有客户端连接统计信息</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">[root@h1 zookeeper]# echo crst | nc 192.168.161.128 2181</div><div class="line">Connection stats reset.</div></pre></td></tr></table></figure>
+<ul>
+<li>conf</li>
+</ul>
+<p>获取基本配置信息</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">[root@h1 zookeeper]# echo conf | nc 192.168.161.128 2181</div><div class="line">clientPort=2181</div><div class="line">dataDir=/var/zookeeper/version-2</div><div class="line">dataLogDir=/var/zookeeper/version-2</div><div class="line">tickTime=2000</div><div class="line">maxClientCnxns=60</div><div class="line">minSessionTimeout=4000</div><div class="line">maxSessionTimeout=40000</div><div class="line">serverId=1</div><div class="line">initLimit=10</div><div class="line">syncLimit=5</div><div class="line">electionAlg=3</div><div class="line">electionPort=2184</div><div class="line">quorumPort=2183</div><div class="line">peerType=0</div><div class="line">[root@h1 zookeeper]#</div></pre></td></tr></table></figure>
+<ul>
+<li>cons</li>
+</ul>
+<p>客户端连接的详细信息</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">[root@h1 zookeeper]# echo cons | nc 192.168.161.128 2181</div><div class="line"> /192.168.161.128:53257[0](queued=0,recved=1,sent=0)</div></pre></td></tr></table></figure>
+<ul>
+<li>envi</li>
+</ul>
+<p>环境信息</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">[root@h1 zookeeper]# echo envi | nc 192.168.161.128 2181</div><div class="line">Environment:</div><div class="line">zookeeper.version=3.4.9-1757313, built on 08/23/2016 06:50 GMT</div><div class="line">host.name=h1</div><div class="line">java.version=1.8.0_101</div><div class="line">java.vendor=Oracle Corporation</div><div class="line">java.home=/soft/jdk1.8.0_101/jre</div><div class="line">......</div></pre></td></tr></table></figure>
+<ul>
+<li>ruok</li>
+</ul>
+<p>ruok(are you ok)?<br>查询，zookeeper是否处于工作状态。</p>
+<p>一般会返回 <code>imok</code> (I am ok)</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">[root@h1 zookeeper]# echo ruok | nc 192.168.161.128 2181</div><div class="line">imok[root@h1 zookeeper]#</div></pre></td></tr></table></figure>
+<ul>
+<li>srvr</li>
+</ul>
+<p>和stat命令类似，但是输出不包括客户端信息。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">[root@h1 zookeeper]# echo srvr | nc 192.168.161.128 2181</div><div class="line">Zookeeper version: 3.4.9-1757313, built on 08/23/2016 06:50 GMT</div><div class="line">Latency min/avg/max: 0/0/0</div><div class="line">Received: 13</div><div class="line">Sent: 12</div><div class="line">Connections: 1</div><div class="line">Outstanding: 0</div><div class="line">Zxid: 0x500000001</div><div class="line">Mode: follower</div><div class="line">Node count: 18</div></pre></td></tr></table></figure>
+<ul>
+<li>srst</li>
+</ul>
+<p>重置服务器端统计信息</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">[root@h1 zookeeper]# echo srst | nc 192.168.161.128 2181</div><div class="line">Server stats reset.</div><div class="line">[root@h1 zookeeper]#</div></pre></td></tr></table></figure>
+<ul>
+<li>wchs</li>
+</ul>
+<p>watcher信息</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">[root@h1 zookeeper]# echo wchs | nc 192.168.161.128 2181</div><div class="line">0 connections watching 0 paths</div><div class="line">Total watches:0</div></pre></td></tr></table></figure>
+<ul>
+<li>wchc</li>
+</ul>
+<p>以会话分组，显示watcher信息</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">echo wchc | nc 192.168.161.128 2181</div></pre></td></tr></table></figure>
+<ul>
+<li>wchp</li>
+</ul>
+<p>以节点分组，显示watcher信息</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">echo wchp | nc 192.168.161.128 2181</div></pre></td></tr></table></figure>
+<ul>
+<li>dump</li>
+</ul>
+<p>输出会话信息</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">[root@h1 zookeeper]# echo dump | nc 192.168.161.128 2181</div><div class="line">SessionTracker dump:</div><div class="line">org.apache.zookeeper.server.quorum.LearnerSessionTracker@6f523655</div><div class="line">ephemeral nodes dump:</div><div class="line">Sessions with Ephemerals (0):</div></pre></td></tr></table></figure>
+</div><script type="text/javascript" src="/js/share.js?v=0.0.0" async></script><a data-url="http://yoursite.com/2017/03/15/zookeeper-03-常用配置和四字命令/" data-id="cj7ujy0c800872i75jnivl2fn" data-qrcode="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAN4AAADeCAAAAAB3DOFrAAACr0lEQVR42u3aQW7DQAgF0Nz/0u22UmTnA0OSSs+rqHE981wJKMzjEV8/f677b5+v+ydcPfP52/s7RxceHh7eYOv3m7ta5oqRvJTk8/3LerEWHh4e3hovWf5+u9XfTV5lNUng4eHhfTMvSQ/3iaRaduPh4eH9R96BMD1oMeDh4eF9G6/ahO39ZN5KXuy14OHh4cW8SVD+1OeV+R4eHh7eeKqeXPn4Px+qJS2JaG94eHh4C7zeCH8Sgav4SbmPh4eH905eHsp795wq1qNV8PDw8NZ4k6L2PtwnDY6NgRkeHh7eBq/aRMjTQA7oHR2I7sTDw8Nb4OXhvlcQ91q91fbHi+fj4eHhHeVVW6K9lutku/lO8PDw8N7D643285TQ22K06bxMx8PDw1vg9crrfPn8+b3W8ChJ4OHh4RV5SYshOWSQLJ//5FTKwcPDw9vgTYrgyWi/x8uTRzkX4eHh4RV51UK5h8+PauUDs8KRAjw8PLxDvGoQz+/PNzcp4l88Hw8PD2+B12sW9JJK3hrOX2tyrAEPDw9vg1cNxPkQa35nXr4X/m/Aw8PDG/CqR52qY6pqYkgK9AISDw8Pb4F3qkTOo3FvuFU9CoaHh4e3zZuUv8lG88bu5E48PDy89/CqpfAjuCbHpwp/k95W8PDw8Ma83ki+14qdDLF64zE8PDy8Dd6klZCXufkRhF60v1wFDw8Pb4E3OXTVK5fzcnxCxcPDw9vj9QriJByfGpv1xnKFLIeHh4dX5J3KLdVRWXU8ljSID/Sz8fDw8GLeJBnMQ/PkxUVpCQ8PD2+Nlwfiams1L7XnY7nLxICHh4f3IV4VnBfH8ybIgcSAh4eHt8BL2FVM/kLzJvIo7+Hh4eHFvHlQzsdXp1JI1BDBw8PDW+BVl+lN1aqHtJJyeVLW4+Hh4bV4v/6CxTqZW5wwAAAAAElFTkSuQmCC" class="article-share-link">分享</a><div class="tags"><a href="/tags/zookeeper/">zookeeper</a></div><div class="post-nav"><a href="/2017/03/15/zookeeper-02-环境搭建/" class="pre">zookeeper-02-环境搭建</a><a href="/2017/03/15/zookeeper-04-基本命令/" class="next">zookeeper-04-基本命令</a></div><div id="disqus_thread"><div class="btn_click_load"><button class="disqus_click_btn">阅读评论 「请确保 disqus.com 可以正常加载」</button></div><script>var disqus_shortname = 'hylexus';
+var disqus_identifier = '2017/03/15/zookeeper-03-常用配置和四字命令/';
+var disqus_title = 'zookeeper-03-常用配置和四字命令';
+var disqus_url = 'http://yoursite.com/2017/03/15/zookeeper-03-常用配置和四字命令/';
+$('.btn_click_load').click(function() {
+  (function() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+  $('.btn_click_load').css('display','none');
+});
+$.ajax({
+  url: 'https://disqus.com/next/config.json',
+  timeout: 3000,
+  type: 'GET',
+  success: (function() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    $('.btn_click_load').css('display','none');
+  })(),
+  error: function() {
+    $('.btn_click_load').css('display','block');
+  }
+});</script><script id="dsq-count-scr" src="//hylexus.disqus.com/count.js" async></script></div></div></div></div><div class="pure-u-1 pure-u-md-1-4"><div id="sidebar"><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/99-problems-in-scala/">99-problems-in-scala</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-多线程/">Java-多线程</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JavaSE/">JavaSE</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/LeetCode/">LeetCode</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/NIO/">NIO</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/app-server/">app-server</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/docker/">docker</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/http-server/">http-server</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kafka/">kafka</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/logging/">logging</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/maven/">maven</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/other/">other</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/scala/">scala</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/spark/">spark</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/spring-cloud/">spring-cloud</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/zookeeper/">zookeeper</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/安全/">安全</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/排序/">排序</a><span class="category-list-count">2</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-star-o"> 标签</i></div><div class="tagcloud"><a href="/tags/kafka/" style="font-size: 15px;">kafka</a> <a href="/tags/JVM/" style="font-size: 15px;">JVM</a> <a href="/tags/NIO/" style="font-size: 15px;">NIO</a> <a href="/tags/LeetCode/" style="font-size: 15px;">LeetCode</a> <a href="/tags/安全/" style="font-size: 15px;">安全</a> <a href="/tags/docker/" style="font-size: 15px;">docker</a> <a href="/tags/git/" style="font-size: 15px;">git</a> <a href="/tags/apache-httpd/" style="font-size: 15px;">apache/httpd</a> <a href="/tags/lambda/" style="font-size: 15px;">lambda</a> <a href="/tags/bit/" style="font-size: 15px;">bit</a> <a href="/tags/keytool/" style="font-size: 15px;">keytool</a> <a href="/tags/非对称加密/" style="font-size: 15px;">非对称加密</a> <a href="/tags/jt-808/" style="font-size: 15px;">jt-808</a> <a href="/tags/mysql/" style="font-size: 15px;">mysql</a> <a href="/tags/linux/" style="font-size: 15px;">linux</a> <a href="/tags/logging/" style="font-size: 15px;">logging</a> <a href="/tags/scala/" style="font-size: 15px;">scala</a> <a href="/tags/redis/" style="font-size: 15px;">redis</a> <a href="/tags/spark/" style="font-size: 15px;">spark</a> <a href="/tags/spring-cloud/" style="font-size: 15px;">spring-cloud</a> <a href="/tags/ssh/" style="font-size: 15px;">ssh</a> <a href="/tags/tomcat/" style="font-size: 15px;">tomcat</a> <a href="/tags/zookeeper/" style="font-size: 15px;">zookeeper</a> <a href="/tags/maven/" style="font-size: 15px;">maven</a> <a href="/tags/排序/" style="font-size: 15px;">排序</a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/java多线程-01-基本概念/">java多线程-01-基本概念</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/排序算法-02-插入排序/">排序算法-02-插入排序</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/常见加密类型及通信安全/">常见加密类型及通信安全</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/docker筑基篇-00-docker简介/">docker筑基篇-00-docker简介</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/git-01-简介、安装和配置/">git-01-简介、安装和配置</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/git-02-基本操作/">git-02-基本操作</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/shiro-常用filter/">shiro-常用filter</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/problem01-05/">problem01-05</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/java秘钥、证书管理工具-keytool/">java秘钥、证书管理工具-keytool</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/09/14/SSL、openSSL、CA/">SSL、openSSL、CA</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><script type="text/javascript" src="//hylexus.disqus.com/recent_comments_widget.js?num_items=5&amp;hide_avatars=1&amp;avatar_size=32&amp;excerpt_length=20&amp;hide_mods=1"></script></div><div class="widget"><div class="widget-title"><i class="fa fa-external-link"> 友情链接</i></div><ul></ul><a href="http://blog.csdn.net/hylexus" title="我的CSDN" target="_blank">我的CSDN</a><ul></ul><a href="https://segmentfault.com/u/hylexus" title="我的segmentfault" target="_blank">我的segmentfault</a><ul></ul><a href="http://www.jianshu.com/u/4f83555879f6" title="我的简书" target="_blank">我的简书</a></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2017 <a href="/." rel="nofollow">宛丘.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a id="rocket" href="#top" class="show"></a><script type="text/javascript" src="/js/totop.js?v=0.0.0" async></script><script type="text/javascript" src="//cdn.bootcss.com/fancybox/3.1.20/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=0.0.0" async></script><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/fancybox/3.1.20/jquery.fancybox.min.css"><script type="text/javascript" src="/js/codeblock-resizer.js?v=0.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=0.0.0"></script></div></body></html>
